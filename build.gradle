@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '6.0.0'
+}
+
+description = 'A service that can send a link from hh.ru via Telegram to Google Sheets.'
+mainClassName = 'com.pelgray.ServiceRunner'
+
+group 'com.pelgray'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+}
+
+jar {
+    manifest {
+        attributes(
+                'Project': project.name,
+                'Description': project.hasProperty('description') ? project.description : '?',
+                'Built-Date': new Date()
+        )
+    }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    minimize()
+}
