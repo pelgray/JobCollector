@@ -1,0 +1,11 @@
+#IDE
+.idea/
+*.iml
+.gradle/
+gradle/
+*/gradlew
+
+#Java
+build/
+target/
+logs/
