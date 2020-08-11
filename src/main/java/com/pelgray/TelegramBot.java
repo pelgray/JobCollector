@@ -29,13 +29,15 @@ public class TelegramBot extends TelegramLongPollingBot {
      */
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage()) {
-            Message msg = update.getMessage();
-            try {
-                execute(handleCommand(msg));
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
+        if (!update.hasMessage()) {
+            System.out.println("Неизвестный тип сообщения");
+        }
+
+        Message msg = update.getMessage();
+        try {
+            execute(handleCommand(msg));
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
     }
 

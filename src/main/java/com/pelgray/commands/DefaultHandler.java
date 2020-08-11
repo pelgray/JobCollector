@@ -9,6 +9,7 @@ public class DefaultHandler implements ICommandHandler {
         return new SendMessage(msg.getChatId(), "Не понял").setReplyToMessageId(msg.getMessageId());
     }
 
+    // Возвращаем false, поскольку это класс ответа по умолчанию, в котором нет обработки команды
     @Override
     public boolean accept(Message msg) {
         return false;

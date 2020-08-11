@@ -3,8 +3,6 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '6.0.0'
 }
 
-description = 'A service that can send a link from hh.ru via Telegram to Google Sheets.'
-
 group 'com.pelgray'
 
 sourceCompatibility = 1.8
@@ -15,14 +13,14 @@ repositories {
     mavenCentral()
 }
 
-def springVersion = '5.2.8.RELEASE'
+String SPRING_VER = '5.2.8.RELEASE'
 
 dependencies {
     compile group: 'org.telegram', name: 'telegrambots', version: '4.9.1'
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.30'
-    compile group: 'org.springframework', name: 'spring-core', version: springVersion
-    compile group: 'org.springframework', name: 'spring-beans', version: springVersion
-    compile group: 'org.springframework', name: 'spring-context', version: springVersion
+    compile group: 'org.springframework', name: 'spring-core', version: SPRING_VER
+    compile group: 'org.springframework', name: 'spring-beans', version: SPRING_VER
+    compile group: 'org.springframework', name: 'spring-context', version: SPRING_VER
 }
 
 jar {
@@ -30,7 +28,7 @@ jar {
         attributes(
                 'Project': project.name,
                 'Main-Class': 'com.pelgray.ServiceRunner',
-                'Description': project.hasProperty('description') ? project.description : '?',
+                'Description': 'A service that can send a link from hh.ru via Telegram to Google Sheets.',
                 'Built-Date': new Date()
         )
     }
@@ -38,5 +36,8 @@ jar {
 
 shadowJar {
     archiveClassifier.set('')
-    minimize()
+    minimize {
+        exclude(dependency("org.springframework:spring-beans:${SPRING_VER}"))
+        exclude(dependency("com.fasterxml.jackson.core:jackson-databind:.*"))
+    }
 }
