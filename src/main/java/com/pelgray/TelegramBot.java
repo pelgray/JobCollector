@@ -23,9 +23,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     private List<ICommandHandler> commands;
 
     /**
-     * Метод для приема сообщений.
+     * Метод для приема сообщений
      *
-     * @param update Содержит сообщение от пользователя.
+     * @param update содержит сообщение от пользователя
      */
     @Override
     public void onUpdateReceived(Update update) {
@@ -33,9 +33,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             Message msg = update.getMessage();
 
             Optional<ICommandHandler> handlerOpt = findCommand(msg);
-            SendMessage sendMessageRequest = handlerOpt.isPresent() ? handlerOpt.get().run(msg) :
-                    (new SendMessage(msg.getChatId(), "Не понял")
-                            .setReplyToMessageId(msg.getMessageId()));
+            SendMessage sendMessageRequest = handlerOpt.isPresent() ?
+                    handlerOpt.get().handle(msg) :
+                    (new SendMessage(msg.getChatId(), "Не понял").setReplyToMessageId(msg.getMessageId()));
             try {
                 execute(sendMessageRequest);
             } catch (TelegramApiException e) {
@@ -45,9 +45,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     /**
-     * Метод возвращает подходящую команду по полученному сообщению.
+     * Метод возвращает подходящую команду по полученному сообщению
      *
-     * @return Обработчик команды
+     * @param message сообщение от пользователя
+     * @return обработчик команды
      */
     private Optional<ICommandHandler> findCommand(Message message) {
         return commands.stream()
@@ -56,7 +57,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     /**
-     * Метод возвращает имя бота, указанное при регистрации.
+     * Метод возвращает имя бота, указанное при регистрации
      *
      * @return имя бота
      */
