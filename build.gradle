@@ -14,10 +14,12 @@ repositories {
 }
 
 String SPRING_VER = '5.2.8.RELEASE'
+String SLF4J_VER = '1.7.30'
 
 dependencies {
     compile group: 'org.telegram', name: 'telegrambots', version: '4.9.1'
-    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.30'
+    compile group: 'org.slf4j', name: 'slf4j-simple', version: SLF4J_VER
+    compile group: 'org.slf4j', name: 'slf4j-api', version: SLF4J_VER
     compile group: 'org.springframework', name: 'spring-core', version: SPRING_VER
     compile group: 'org.springframework', name: 'spring-beans', version: SPRING_VER
     compile group: 'org.springframework', name: 'spring-context', version: SPRING_VER

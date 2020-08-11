@@ -1,5 +1,7 @@
 package com.pelgray;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -12,16 +14,17 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @PropertySource("classpath:config.properties")
 @ComponentScan("com.pelgray")
 public class ServiceRunner {
+    private final static Logger LOG = LoggerFactory.getLogger(ServiceRunner.class);
+
     public static void main(String[] args) throws Exception {
         ApiContextInitializer.init();
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ServiceRunner.class);
-        TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
         try {
-            telegramBotsApi.registerBot(context.getBean("telegramBot", TelegramBot.class));
+            new TelegramBotsApi().registerBot(context.getBean("telegramBot", TelegramBot.class));
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            LOG.error("Исключение на этапе регистрации Telegram-бота", e);
             throw e;
         }
-        System.out.println("Бот запущен");
+        LOG.info("Бот успешно запущен");
     }
 }

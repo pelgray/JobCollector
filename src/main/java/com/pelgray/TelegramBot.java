@@ -2,6 +2,8 @@ package com.pelgray;
 
 import com.pelgray.commands.DefaultHandler;
 import com.pelgray.commands.ICommandHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,7 @@ import java.util.List;
 
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
+    private final static Logger LOG = LoggerFactory.getLogger(TelegramBot.class);
     @Value("${tgBot.Name}")
     private String botUsername;
     @Value("${tgBot.Token}")
@@ -29,15 +32,19 @@ public class TelegramBot extends TelegramLongPollingBot {
      */
     @Override
     public void onUpdateReceived(Update update) {
+        LOG.debug("Получено обновление id={}", update.getUpdateId());
         if (!update.hasMessage()) {
-            System.out.println("Неизвестный тип сообщения");
+            LOG.warn("Тип сообщения, не имеющий обработку: {}", update.toString());
+            return;
         }
-
         Message msg = update.getMessage();
+        LOG.debug("Получено сообщение от пользователя {}", msg.getFrom().getUserName());
+
         try {
             execute(handleCommand(msg));
+            LOG.debug("Сообщение от пользователя {} обработано", msg.getFrom().getUserName());
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            LOG.error("Не удалось выполнить отправку ответного сообщения", e);
         }
     }
 
