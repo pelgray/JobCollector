@@ -1,5 +1,6 @@
 package com.pelgray;
 
+import com.pelgray.commands.DefaultHandler;
 import com.pelgray.commands.ICommandHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +12,6 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
-import java.util.Optional;
 
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
@@ -31,13 +31,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage()) {
             Message msg = update.getMessage();
-
-            Optional<ICommandHandler> handlerOpt = findCommand(msg);
-            SendMessage sendMessageRequest = handlerOpt.isPresent() ?
-                    handlerOpt.get().handle(msg) :
-                    (new SendMessage(msg.getChatId(), "Не понял").setReplyToMessageId(msg.getMessageId()));
             try {
-                execute(sendMessageRequest);
+                execute(handleCommand(msg));
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
@@ -45,15 +40,16 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     /**
-     * Метод возвращает подходящую команду по полученному сообщению
+     * Метод возвращает ответ по полученному сообщению
      *
      * @param message сообщение от пользователя
-     * @return обработчик команды
+     * @return сообщение-ответ
      */
-    private Optional<ICommandHandler> findCommand(Message message) {
-        return commands.stream()
+    private SendMessage handleCommand(Message message) {
+        ICommandHandler handler = commands.stream()
                 .filter(command -> command.accept(message))
-                .findFirst();
+                .findFirst().orElse(new DefaultHandler());
+        return handler.handle(message);
     }
 
     /**
