@@ -7,21 +7,16 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 @Component
 public class AddVacancyURL implements ICommandHandler {
     @Override
-    public SendMessage run(Message msg) {
-        SendMessage result = new SendMessage();
-        result.setChatId(msg.getChatId().toString());
-        result.setReplyToMessageId(msg.getMessageId());
-        result.setText("Добавлено");
-        return result;
+    public SendMessage handle(Message msg) {
+        return new SendMessage(msg.getChatId(), "Добавлено").setReplyToMessageId(msg.getMessageId());
     }
 
     @Override
     public boolean accept(Message msg) {
-        String txt = msg.getText().trim();
-        return txt.matches(regex());
+        return msg.getText().trim().matches(regex());
     }
 
     protected String regex() {
-        return "^(https?:\\/\\/)([\\w\\.\\/\\d]+)$";
+        return "^https?:\\/\\/hh\\.ru\\/vacancy\\/\\d+(\\?.+)*$";
     }
 }
