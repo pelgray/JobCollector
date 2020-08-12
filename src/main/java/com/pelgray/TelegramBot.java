@@ -32,17 +32,17 @@ public class TelegramBot extends TelegramLongPollingBot {
      */
     @Override
     public void onUpdateReceived(Update update) {
-        LOG.debug("Получено обновление id={}", update.getUpdateId());
+        LOG.debug("Получен запрос id={}", update.getUpdateId());
         if (!update.hasMessage()) {
-            LOG.warn("Тип сообщения, не имеющий обработку: {}", update.toString());
+            LOG.warn("Не понятно, как обработать запрос: {}", update.toString());
             return;
         }
         Message msg = update.getMessage();
-        LOG.debug("Получено сообщение от пользователя {}", msg.getFrom().getUserName());
+        LOG.info("Получено сообщение от пользователя {}", msg.getFrom().getUserName());
 
         try {
             execute(handleCommand(msg));
-            LOG.debug("Сообщение от пользователя {} обработано", msg.getFrom().getUserName());
+            LOG.info("Сообщение от пользователя {} обработано", msg.getFrom().getUserName());
         } catch (TelegramApiException e) {
             LOG.error("Не удалось выполнить отправку ответного сообщения", e);
         }

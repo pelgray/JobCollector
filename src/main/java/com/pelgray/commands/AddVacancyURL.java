@@ -13,7 +13,7 @@ public class AddVacancyURL implements ICommandHandler {
 
     @Override
     public SendMessage handle(Message msg) {
-        LOG.debug("Добавлена вакансия для пользователя {}", msg.getFrom().getUserName());
+        LOG.info("Добавлена вакансия для пользователя {}", msg.getFrom().getUserName());
         return new SendMessage(msg.getChatId(), "Добавлено").setReplyToMessageId(msg.getMessageId());
     }
 
