@@ -17,14 +17,15 @@ public class ServiceRunner {
     private final static Logger LOG = LoggerFactory.getLogger(ServiceRunner.class);
 
     public static void main(String[] args) throws Exception {
+        long start = System.currentTimeMillis();
         ApiContextInitializer.init();
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ServiceRunner.class);
         try {
             new TelegramBotsApi().registerBot(context.getBean("telegramBot", TelegramBot.class));
         } catch (TelegramApiException e) {
-            LOG.error("Исключение на этапе регистрации Telegram-бота", e);
+            LOG.error("Ошибка при подключении к Telegram боту", e);
             throw e;
         }
-        LOG.info("Бот успешно запущен");
+        LOG.info("Сервис успешно запущен за {} с", (System.currentTimeMillis() - start) / 1000);
     }
 }
