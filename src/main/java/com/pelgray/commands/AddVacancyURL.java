@@ -22,7 +22,7 @@ public class AddVacancyURL implements ICommandHandler {
     public SendMessage handle(Message msg) {
         SendMessage sm = new SendMessage(msg.getChatId(), "Добавлено").setReplyToMessageId(msg.getMessageId());
         try {
-            GoogleSheetsUtil.addTxtOnNewLine(msg.getText(), spreadsheetId);
+            GoogleSheetsUtil.addTxtOnNewLine(getVacancyURL(msg), spreadsheetId);
         } catch (IOException | GeneralSecurityException ex) {
             LOG.error("Неудачная попытка добавления вакансии для пользователя " + msg.getFrom().getUserName(), ex);
             return sm.setText("Не добавлено");
@@ -33,10 +33,14 @@ public class AddVacancyURL implements ICommandHandler {
 
     @Override
     public boolean accept(Message msg) {
-        return msg.getText().trim().matches(regex());
+        return msg.getText().trim().matches(String.format("^%s$", regex()));
     }
 
     protected String regex() {
-        return "^https?:\\/\\/(?:\\w+\\.)?\\Q" + DOMAIN + "\\E\\/vacancy\\/\\d+(\\?.+)*$";
+        return "https?:\\/\\/(?:\\w+\\.)?\\Q" + DOMAIN + "\\E\\/vacancy\\/\\d+(\\?.+)*";
+    }
+
+    protected String getVacancyURL(Message msg) {
+        return msg.getText();
     }
 }
