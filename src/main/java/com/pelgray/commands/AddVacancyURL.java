@@ -33,10 +33,10 @@ public class AddVacancyURL implements ICommandHandler {
 
     @Override
     public boolean accept(Message msg) {
-        return msg.getText().trim().matches(String.format("^%s$", regex()));
+        return msg.getText().trim().matches(String.format("^%s$", getRegex()));
     }
 
-    protected String regex() {
+    protected String getRegex() {
         return "https?:\\/\\/(?:\\w+\\.)?\\Q" + DOMAIN + "\\E\\/vacancy\\/\\d+(\\?.+)*";
     }
 

@@ -35,6 +35,29 @@ public class GoogleSheetsUtil {
     private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
     /**
+     * Добавляет текст на свободную строку после ячейки A1
+     *
+     * @param txt           добавляемый текст
+     * @param spreadsheetId Id Google таблицы
+     */
+    public static void addTxtOnNewLine(String txt, String spreadsheetId) throws IOException, GeneralSecurityException {
+        final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+        final String range = "A1";
+        // Вставка значения по аналогии с вводом пользователя (авто приведение типа данных)
+        String valueInputOption = "USER_ENTERED";
+        Sheets service = new Sheets.Builder(httpTransport, JSON_FACTORY, getCredentials(httpTransport))
+                .setApplicationName(APPLICATION_NAME)
+                .build();
+
+        List<List<Object>> values = Arrays.asList(Arrays.asList(txt));
+        ValueRange body = new ValueRange().setValues(values);
+        AppendValuesResponse result = service.spreadsheets().values().append(spreadsheetId, range, body)
+                .setValueInputOption(valueInputOption)
+                .execute();
+        LOG.info("{} ячеек добавлено.", result.getUpdates().getUpdatedCells());
+    }
+
+    /**
      * Создает объект авторизации Credential.
      *
      * @throws IOException Если файл credentials.json не может быть найден.
@@ -53,23 +76,5 @@ public class GoogleSheetsUtil {
                 .build();
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
         return new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
-    }
-
-    public static void addTxtOnNewLine(String txt, String spreadsheetId) throws IOException, GeneralSecurityException {
-        final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        final String range = "A1";
-        String valueInputOption = "USER_ENTERED";
-        Sheets service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, getCredentials(HTTP_TRANSPORT))
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-
-        List<List<Object>> values = Arrays.asList(Arrays.asList(txt));
-        ValueRange body = new ValueRange()
-                .setValues(values);
-        AppendValuesResponse result =
-                service.spreadsheets().values().append(spreadsheetId, range, body)
-                        .setValueInputOption(valueInputOption)
-                        .execute();
-        LOG.info("{} ячеек добавлено.", result.getUpdates().getUpdatedCells());
     }
 }
