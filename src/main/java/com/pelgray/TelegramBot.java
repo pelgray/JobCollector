@@ -17,7 +17,7 @@ import java.util.List;
 
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
-    private final static Logger LOG = LoggerFactory.getLogger(TelegramBot.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TelegramBot.class);
     @Value("${tgBot.Name}")
     private String botUsername;
     @Value("${tgBot.Token}")
