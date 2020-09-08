@@ -14,7 +14,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @PropertySource("classpath:config.properties")
 @ComponentScan("com.pelgray")
 public class ServiceRunner {
-    private final static Logger LOG = LoggerFactory.getLogger(ServiceRunner.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ServiceRunner.class);
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();

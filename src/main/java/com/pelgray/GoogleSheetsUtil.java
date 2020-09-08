@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class GoogleSheetsUtil {
-    private final static Logger LOG = LoggerFactory.getLogger(GoogleSheetsUtil.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GoogleSheetsUtil.class);
     private static final String APPLICATION_NAME = "JobCollectorTest";
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
@@ -35,7 +35,7 @@ public class GoogleSheetsUtil {
     private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
     /**
-     * Добавляет текст на свободную строку после ячейки A1
+     * Добавляет текст на свободную строку, начиная с ячейки A1
      *
      * @param txt           добавляемый текст
      * @param spreadsheetId Id Google таблицы

@@ -13,7 +13,7 @@ import java.security.GeneralSecurityException;
 
 @Component
 public class AddVacancyURL implements ICommandHandler {
-    private final static Logger LOG = LoggerFactory.getLogger(AddVacancyURL.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AddVacancyURL.class);
     protected final String DOMAIN = "hh.ru";
     @Value("${gSheets.SpreadsheetId}")
     private String spreadsheetId;

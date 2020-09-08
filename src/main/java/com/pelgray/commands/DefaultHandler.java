@@ -6,7 +6,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
 public class DefaultHandler implements ICommandHandler {
-    private final static Logger LOG = LoggerFactory.getLogger(DefaultHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultHandler.class);
 
     @Override
     public SendMessage handle(Message msg) {

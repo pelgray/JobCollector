@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 @Component
 public class AddVacancyMobileLink extends AddVacancyURL {
-    private final static Logger LOG = LoggerFactory.getLogger(AddVacancyMobileLink.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AddVacancyMobileLink.class);
 
     @Override
     protected String getRegex() {
