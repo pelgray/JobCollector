@@ -26,6 +26,26 @@ public class TelegramBot extends TelegramLongPollingBot {
     private List<ICommandHandler> commands;
 
     /**
+     * Метод возвращает имя бота, указанное при регистрации
+     *
+     * @return имя бота
+     */
+    @Override
+    public String getBotUsername() {
+        return botUsername;
+    }
+
+    /**
+     * Метод возвращает token бота для связи с сервером Telegram
+     *
+     * @return token для бота
+     */
+    @Override
+    public String getBotToken() {
+        return botToken;
+    }
+
+    /**
      * Метод для приема сообщений
      *
      * @param update содержит сообщение от пользователя
@@ -59,25 +79,5 @@ public class TelegramBot extends TelegramLongPollingBot {
                 .filter(command -> command.accept(message))
                 .findFirst().orElse(new DefaultHandler());
         return handler.handle(message);
-    }
-
-    /**
-     * Метод возвращает имя бота, указанное при регистрации
-     *
-     * @return имя бота
-     */
-    @Override
-    public String getBotUsername() {
-        return botUsername;
-    }
-
-    /**
-     * Метод возвращает token бота для связи с сервером Telegram
-     *
-     * @return token для бота
-     */
-    @Override
-    public String getBotToken() {
-        return botToken;
     }
 }
