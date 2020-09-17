@@ -1,5 +1,6 @@
 package com.pelgray;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Vacancy {
@@ -395,5 +396,32 @@ public class Vacancy {
                     "required=" + required +
                     '}';
         }
+    }
+
+    /**
+     * @param fieldsOrder порядок сортировки параметров
+     * @return отсортированные в заданной последовательности параметры вакансии
+     * @throws ReflectiveOperationException возникает, если нужного поля не существует, либо оно недоступно
+     */
+    public List<Object> getFieldsDataList(List<String> fieldsOrder) throws ReflectiveOperationException {
+        List<Object> vacancyInfo = new ArrayList<>(fieldsOrder.size());
+        for (String fieldName : fieldsOrder) {
+            try {
+                Object fieldValue = this.getClass().getDeclaredField(fieldName).get(this);
+                String tmp = "-";   // прочерк, если данных нет
+                if (fieldValue != null && !fieldValue.toString().isEmpty()) {
+                    if (!(fieldValue instanceof List)) {
+                        tmp = fieldValue.toString();
+                    } else if (!((List<?>) fieldValue).isEmpty()) {
+                        tmp = fieldValue.toString();
+                        tmp = tmp.substring(1, tmp.length() - 1);
+                    }
+                }
+                vacancyInfo.add(tmp);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new ReflectiveOperationException("Ошибка при обращении к полям класса Vacancy", e);
+            }
+        }
+        return vacancyInfo;
     }
 }

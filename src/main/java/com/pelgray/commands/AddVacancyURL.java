@@ -1,10 +1,11 @@
 package com.pelgray.commands;
 
-import com.pelgray.GoogleSheetsUtil;
+import com.pelgray.GoogleSheetsService;
 import com.pelgray.HhApiService;
 import com.pelgray.Vacancy;
 import com.pelgray.exceptions.DuplicateVacancyException;
-import com.pelgray.exceptions.JobCollectorWarning;
+import com.pelgray.exceptions.GoogleConnectionException;
+import com.pelgray.exceptions.GoogleRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,7 @@ public class AddVacancyURL implements ICommandHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AddVacancyURL.class);
     @Value("${gSheets.SpreadsheetId}")
     private String spreadsheetId;
+    private GoogleSheetsService sheetsService;
     protected final String DOMAIN = HhApiService.DOMAIN;
 
     @Override
@@ -27,19 +29,20 @@ public class AddVacancyURL implements ICommandHandler {
         SendMessage sm = new SendMessage(msg.getChatId(), "Добавлено").setReplyToMessageId(msg.getMessageId());
         try {
             String vacancyId = getVacancyId(msg);
-            if (GoogleSheetsUtil.existsValue(vacancyId, 1, spreadsheetId)) {
+            if (getSheetsService().isValueExist(vacancyId, 1)) {
                 throw new DuplicateVacancyException();
             }
             Vacancy vacancy = HhApiService.getVacancy(vacancyId);
-            GoogleSheetsUtil.addVacancyOnNewLine(vacancy, spreadsheetId);
+            getSheetsService().addVacancyOnNewLine(vacancy);
+            LOG.info("Добавлена вакансия для пользователя {}", msg.getFrom().getUserName());
+            return sm;
+        } catch (DuplicateVacancyException e) {
+            return sm.setText("Не добавлено.\n" + e.getMessage());
         } catch (Exception e) {
-            if (!(e instanceof JobCollectorWarning))
-                LOG.error(String.format("Неудачная попытка добавления вакансии (%s): %s",
-                        msg.getFrom().getUserName(), e.getMessage()), e);
-            return sm.setText("Не добавлено: " + e.getMessage().toLowerCase());
+            LOG.error(String.format("Неудачная попытка добавления вакансии (%s): %s",
+                    msg.getFrom().getUserName(), e.getMessage()), e);
+            return sm.setText("Произошла непредвиденная ошибка.\n" + e.getMessage());
         }
-        LOG.info("Добавлена вакансия для пользователя {}", msg.getFrom().getUserName());
-        return sm;
     }
 
     @Override
@@ -62,5 +65,12 @@ public class AddVacancyURL implements ICommandHandler {
             return matcher.group();
         }
         throw new Exception(String.format("Не удалось получить идентификатор вакансии из адреса '%s'", url));
+    }
+
+    private GoogleSheetsService getSheetsService() throws GoogleRequestException, GoogleConnectionException {
+        if (sheetsService == null) {
+            sheetsService = new GoogleSheetsService(spreadsheetId);
+        }
+        return sheetsService;
     }
 }
