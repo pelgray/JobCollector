@@ -54,7 +54,7 @@ public class GoogleSheetsService {
             throws GoogleConnectionException, GoogleRequestException, ReflectiveOperationException {
         List<Object> vacancyInfo = vac.getFieldsDataList(getFieldsOrder());
         int updatedCells = appendData(Collections.singletonList(vacancyInfo), "A1");
-        LOG.info("{} ячеек о вакансии добавлено.", updatedCells);
+        LOG.debug("{} ячеек о вакансии добавлено.", updatedCells);
     }
 
     /**
@@ -93,9 +93,9 @@ public class GoogleSheetsService {
         if (!headers.isEmpty()) {
             String range = String.format("%s1", (char) ('A' + fieldsOrder.size()));
             int updatedCells = appendData(Collections.singletonList(headers), range);
-            LOG.info("В заголовок добавлено {} ячеек.", updatedCells);
+            LOG.debug("В заголовок добавлено {} ячеек.", updatedCells);
         } else {
-            LOG.info("Заголовки актуальны.");
+            LOG.debug("Заголовки актуальны.");
         }
     }
 

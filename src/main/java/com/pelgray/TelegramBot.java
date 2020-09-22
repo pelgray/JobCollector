@@ -58,11 +58,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
         Message msg = update.getMessage();
-        LOG.info("Получено сообщение от пользователя {}", msg.getFrom().getUserName());
+        LOG.debug("Получено сообщение от пользователя {}", msg.getFrom().getUserName());
 
         try {
             execute(handleCommand(msg));
-            LOG.info("Сообщение от пользователя {} обработано", msg.getFrom().getUserName());
+            LOG.debug("Сообщение от пользователя {} обработано", msg.getFrom().getUserName());
         } catch (TelegramApiException e) {
             LOG.error("Не удалось выполнить отправку ответного сообщения", e);
         }
