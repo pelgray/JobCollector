@@ -407,6 +407,10 @@ public class Vacancy {
         List<Object> vacancyInfo = new ArrayList<>(fieldsOrder.size());
         for (String fieldName : fieldsOrder) {
             try {
+                if (fieldName.isEmpty()) { // Избегаем зануленных пользовательских полей
+                    vacancyInfo.add("");
+                    continue;
+                }
                 Object fieldValue = this.getClass().getDeclaredField(fieldName).get(this);
                 String tmp = "-";   // прочерк, если данных нет
                 if (fieldValue != null && !fieldValue.toString().isEmpty()) {

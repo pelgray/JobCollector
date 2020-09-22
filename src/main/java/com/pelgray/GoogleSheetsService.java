@@ -26,10 +26,10 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class GoogleSheetsService {
     private static final Logger LOG = LoggerFactory.getLogger(GoogleSheetsService.class);
@@ -48,7 +48,7 @@ public class GoogleSheetsService {
      * Добавляет информацию о вакансии на первую пустую строку
      *
      * @param vac информация о вакансии
-     * @throws ReflectiveOperationException возможна при обращении к полям класса Vacancy
+     * @throws ReflectiveOperationException может возникнуть при обращении к полям класса Vacancy
      */
     public void addVacancyOnNewLine(Vacancy vac)
             throws GoogleConnectionException, GoogleRequestException, ReflectiveOperationException {
@@ -84,7 +84,6 @@ public class GoogleSheetsService {
         List<Object> headers = new ArrayList<>();
         // Получаем все указанные в таблице поля класса Vacancy
         List<String> fieldsOrder = getFieldsOrder();
-        String range = String.format("%s1", (char) ('A' + fieldsOrder.size()));
         // С помощью аннотаций и полученного списка полей собираем список заголовков, которые надо добавить в таблицу
         for (Field field : Vacancy.class.getDeclaredFields()) {
             if (!field.isAnnotationPresent(SheetColumn.class) || fieldsOrder.contains(field.getName()))
@@ -92,6 +91,7 @@ public class GoogleSheetsService {
             headers.add(field.getAnnotation(SheetColumn.class).name());
         }
         if (!headers.isEmpty()) {
+            String range = String.format("%s1", (char) ('A' + fieldsOrder.size()));
             int updatedCells = appendData(Collections.singletonList(headers), range);
             LOG.info("В заголовок добавлено {} ячеек.", updatedCells);
         } else {
@@ -103,23 +103,32 @@ public class GoogleSheetsService {
      * Получение списка полей, соответствующих заголовкам в актуальном порядке
      */
     public List<String> getFieldsOrder() throws GoogleRequestException, GoogleConnectionException {
-        List<String> fieldsOrder = new ArrayList<>();
         // Получаем актуальные заголовки таблицы
         List<List<Object>> values = getData("1:1");
-        if (values != null && !values.isEmpty()) {
-            fieldsOrder.addAll(values.get(0).stream()
-                    .flatMap(h -> Stream.of(String.valueOf(h)))
-                    .collect(Collectors.toList()));
-
-            // Через аннотации выясняем названия полей класса Vacancy, соответствующих заголовкам
-            for (Field field : Vacancy.class.getDeclaredFields()) {
-                if (!field.isAnnotationPresent(SheetColumn.class)) {
-                    continue;
-                }
-                SheetColumn sheetColumn = field.getAnnotation(SheetColumn.class);
-                if (fieldsOrder.contains(sheetColumn.name())) {
-                    fieldsOrder.set(fieldsOrder.indexOf(sheetColumn.name()), field.getName());
-                }
+        if (values == null || values.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<String> fieldsOrder = values.get(0).stream().map(String::valueOf).collect(Collectors.toList());
+        BitSet updatedIndexes = new BitSet(fieldsOrder.size());
+        // Через аннотации выясняем названия полей класса Vacancy, соответствующих заголовкам
+        for (Field field : Vacancy.class.getDeclaredFields()) {
+            if (!field.isAnnotationPresent(SheetColumn.class)) {
+                continue;
+            }
+            SheetColumn sheetColumn = field.getAnnotation(SheetColumn.class);
+            if (fieldsOrder.contains(sheetColumn.name())) {
+                int ind = fieldsOrder.indexOf(sheetColumn.name());
+                fieldsOrder.set(ind, field.getName());
+                updatedIndexes.set(ind);
+            }
+        }
+        // Если количество найденных полей в Vacancy не равно указанным в таблице
+        if (updatedIndexes.cardinality() != fieldsOrder.size()) {
+            // Зануляем такие поля во избежание ошибок
+            int fromIndex = updatedIndexes.nextClearBit(0);
+            while (fromIndex < fieldsOrder.size()) {
+                fieldsOrder.set(fromIndex, "");
+                fromIndex = updatedIndexes.nextClearBit(fromIndex + 1);
             }
         }
         return fieldsOrder;
