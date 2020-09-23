@@ -130,8 +130,8 @@ public class Vacancy {
 
 
     /**
-     * @param orderedFields порядок сортировки параметров
-     * @return отсортированные в заданной последовательности параметры вакансии
+     * @param orderedFields список полей класса в той же последовательности, как они указаны в таблице
+     * @return параметры вакансии, соответсвующие полученному списку полей
      * @throws ReflectiveOperationException возникает, если нужного поля не существует, либо оно недоступно
      */
     public List<Object> getFieldsDataList(List<String> orderedFields) throws ReflectiveOperationException {
@@ -143,7 +143,7 @@ public class Vacancy {
                     continue;
                 }
                 Object fieldValue = this.getClass().getDeclaredField(fieldName).get(this);
-                String tmp = "-";   // прочерк, если данных нет
+                String tmp = "-";   // Если данных нет
                 if (fieldValue != null && !fieldValue.toString().isEmpty()) {
                     // Необходимо получить значение поля, если это не список,
                     // и список значений, если сам список не пуст

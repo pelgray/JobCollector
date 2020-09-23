@@ -102,7 +102,7 @@ public class GoogleSheetsService {
     }
 
     /**
-     * Получение списка полей, соответствующих заголовкам в актуальном порядке
+     * Получение списка полей, соответствующих заголовкам в порядке, указанном в таблице
      */
     private List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
         // Получаем актуальные заголовки таблицы
