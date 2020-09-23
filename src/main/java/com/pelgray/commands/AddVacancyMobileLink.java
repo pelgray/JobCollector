@@ -20,11 +20,11 @@ public class AddVacancyMobileLink extends AddVacancyURL {
 
     @Override
     protected String getVacancyURL(Message msg) {
-        String text = msg.getText();
-        Matcher matcher = Pattern.compile(super.getRegex()).matcher(text);
+        String result = msg.getText();
+        Matcher matcher = Pattern.compile(super.getRegex()).matcher(result);
         if (matcher.find()) {
-            text = matcher.group();
+            result = matcher.group();
         }
-        return text;
+        return result;
     }
 }
