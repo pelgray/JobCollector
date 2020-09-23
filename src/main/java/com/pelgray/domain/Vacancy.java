@@ -130,13 +130,13 @@ public class Vacancy {
 
 
     /**
-     * @param fieldsOrder порядок сортировки параметров
+     * @param orderedFields порядок сортировки параметров
      * @return отсортированные в заданной последовательности параметры вакансии
      * @throws ReflectiveOperationException возникает, если нужного поля не существует, либо оно недоступно
      */
-    public List<Object> getFieldsDataList(List<String> fieldsOrder) throws ReflectiveOperationException {
-        List<Object> result = new ArrayList<>(fieldsOrder.size());
-        for (String fieldName : fieldsOrder) {
+    public List<Object> getFieldsDataList(List<String> orderedFields) throws ReflectiveOperationException {
+        List<Object> result = new ArrayList<>(orderedFields.size());
+        for (String fieldName : orderedFields) {
             try {
                 if (fieldName.isEmpty()) { // Избегаем зануленных пользовательских полей
                     result.add("");

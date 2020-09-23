@@ -85,15 +85,15 @@ public class GoogleSheetsService {
     public void updateHeaders() throws GoogleConnectionException, GoogleRequestException {
         List<Object> headers = new ArrayList<>();
         // Получаем все указанные в таблице поля класса Vacancy
-        List<String> fieldsOrder = getOrderedFields();
+        List<String> orderedFields = getOrderedFields();
         // С помощью аннотаций и полученного списка полей собираем список заголовков, которые надо добавить в таблицу
         for (Field field : Vacancy.class.getDeclaredFields()) {
-            if (field.isAnnotationPresent(SheetColumn.class) && !fieldsOrder.contains(field.getName())) {
+            if (field.isAnnotationPresent(SheetColumn.class) && !orderedFields.contains(field.getName())) {
                 headers.add(field.getAnnotation(SheetColumn.class).name());
             }
         }
         if (!headers.isEmpty()) {
-            String range = String.format("%s1", (char) ('A' + fieldsOrder.size()));
+            String range = String.format("%s1", (char) ('A' + orderedFields.size()));
             int updatedCells = appendData(Collections.singletonList(headers), range);
             LOG.debug("В заголовок добавлено {} ячеек.", updatedCells);
         } else {
@@ -104,7 +104,7 @@ public class GoogleSheetsService {
     /**
      * Получение списка полей, соответствующих заголовкам в актуальном порядке
      */
-    public List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
+    private List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
         // Получаем актуальные заголовки таблицы
         List<List<Object>> values = getData("1:1");
         if (values == null || values.isEmpty()) {

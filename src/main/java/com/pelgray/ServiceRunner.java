@@ -22,9 +22,7 @@ public class ServiceRunner {
         ApiContextInitializer.init();
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ServiceRunner.class);
         try {
-            String tgBotServName = TelegramBotService.class.getSimpleName();
-            new TelegramBotsApi().registerBot(context.getBean(tgBotServName.substring(0, 1).toLowerCase() +
-                    tgBotServName.substring(1), TelegramBotService.class));
+            new TelegramBotsApi().registerBot(context.getBean("telegramBotService", TelegramBotService.class));
         } catch (TelegramApiException e) {
             LOG.error("Ошибка при подключении к Telegram боту", e);
             throw e;
