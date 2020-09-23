@@ -1,4 +1,4 @@
-package com.pelgray;
+package com.pelgray.service;
 
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -13,6 +13,8 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
+import com.pelgray.domain.SheetColumn;
+import com.pelgray.domain.Vacancy;
 import com.pelgray.exceptions.GoogleConnectionException;
 import com.pelgray.exceptions.GoogleRequestException;
 import org.slf4j.Logger;
@@ -52,7 +54,7 @@ public class GoogleSheetsService {
      */
     public void addVacancyOnNewLine(Vacancy vac)
             throws GoogleConnectionException, GoogleRequestException, ReflectiveOperationException {
-        List<Object> vacancyInfo = vac.getFieldsDataList(getFieldsOrder());
+        List<Object> vacancyInfo = vac.getFieldsDataList(getOrderedFields());
         int updatedCells = appendData(Collections.singletonList(vacancyInfo), "A1");
         LOG.debug("{} ячеек о вакансии добавлено.", updatedCells);
     }
@@ -83,12 +85,12 @@ public class GoogleSheetsService {
     public void updateHeaders() throws GoogleConnectionException, GoogleRequestException {
         List<Object> headers = new ArrayList<>();
         // Получаем все указанные в таблице поля класса Vacancy
-        List<String> fieldsOrder = getFieldsOrder();
+        List<String> fieldsOrder = getOrderedFields();
         // С помощью аннотаций и полученного списка полей собираем список заголовков, которые надо добавить в таблицу
         for (Field field : Vacancy.class.getDeclaredFields()) {
-            if (!field.isAnnotationPresent(SheetColumn.class) || fieldsOrder.contains(field.getName()))
-                continue;
-            headers.add(field.getAnnotation(SheetColumn.class).name());
+            if (field.isAnnotationPresent(SheetColumn.class) && !fieldsOrder.contains(field.getName())) {
+                headers.add(field.getAnnotation(SheetColumn.class).name());
+            }
         }
         if (!headers.isEmpty()) {
             String range = String.format("%s1", (char) ('A' + fieldsOrder.size()));
@@ -102,36 +104,36 @@ public class GoogleSheetsService {
     /**
      * Получение списка полей, соответствующих заголовкам в актуальном порядке
      */
-    public List<String> getFieldsOrder() throws GoogleRequestException, GoogleConnectionException {
+    public List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
         // Получаем актуальные заголовки таблицы
         List<List<Object>> values = getData("1:1");
         if (values == null || values.isEmpty()) {
             return new ArrayList<>();
         }
-        List<String> fieldsOrder = values.get(0).stream().map(String::valueOf).collect(Collectors.toList());
-        BitSet updatedIndexes = new BitSet(fieldsOrder.size());
+        List<String> result = values.get(0).stream().map(String::valueOf).collect(Collectors.toList());
+        BitSet updatedIndexes = new BitSet(result.size());
         // Через аннотации выясняем названия полей класса Vacancy, соответствующих заголовкам
         for (Field field : Vacancy.class.getDeclaredFields()) {
             if (!field.isAnnotationPresent(SheetColumn.class)) {
                 continue;
             }
             SheetColumn sheetColumn = field.getAnnotation(SheetColumn.class);
-            if (fieldsOrder.contains(sheetColumn.name())) {
-                int ind = fieldsOrder.indexOf(sheetColumn.name());
-                fieldsOrder.set(ind, field.getName());
+            if (result.contains(sheetColumn.name())) {
+                int ind = result.indexOf(sheetColumn.name());
+                result.set(ind, field.getName());
                 updatedIndexes.set(ind);
             }
         }
         // Если количество найденных полей в Vacancy не равно указанным в таблице
-        if (updatedIndexes.cardinality() != fieldsOrder.size()) {
+        if (updatedIndexes.cardinality() != result.size()) {
             // Зануляем такие поля во избежание ошибок
             int fromIndex = updatedIndexes.nextClearBit(0);
-            while (fromIndex < fieldsOrder.size()) {
-                fieldsOrder.set(fromIndex, "");
+            while (fromIndex < result.size()) {
+                result.set(fromIndex, "");
                 fromIndex = updatedIndexes.nextClearBit(fromIndex + 1);
             }
         }
-        return fieldsOrder;
+        return result;
     }
 
     /**

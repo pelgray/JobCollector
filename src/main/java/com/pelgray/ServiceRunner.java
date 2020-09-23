@@ -1,5 +1,6 @@
 package com.pelgray;
 
+import com.pelgray.service.TelegramBotService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -21,7 +22,9 @@ public class ServiceRunner {
         ApiContextInitializer.init();
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ServiceRunner.class);
         try {
-            new TelegramBotsApi().registerBot(context.getBean("telegramBot", TelegramBot.class));
+            String tgBotServName = TelegramBotService.class.getSimpleName();
+            new TelegramBotsApi().registerBot(context.getBean(tgBotServName.substring(0, 1).toLowerCase() +
+                    tgBotServName.substring(1), TelegramBotService.class));
         } catch (TelegramApiException e) {
             LOG.error("Ошибка при подключении к Telegram боту", e);
             throw e;

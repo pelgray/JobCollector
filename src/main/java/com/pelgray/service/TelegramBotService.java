@@ -1,4 +1,4 @@
-package com.pelgray;
+package com.pelgray.service;
 
 import com.pelgray.commands.DefaultHandler;
 import com.pelgray.commands.ICommandHandler;
@@ -16,8 +16,8 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.util.List;
 
 @Component
-public class TelegramBot extends TelegramLongPollingBot {
-    private static final Logger LOG = LoggerFactory.getLogger(TelegramBot.class);
+public class TelegramBotService extends TelegramLongPollingBot {
+    private static final Logger LOG = LoggerFactory.getLogger(TelegramBotService.class);
     @Value("${tgBot.Name}")
     private String botUsername;
     @Value("${tgBot.Token}")

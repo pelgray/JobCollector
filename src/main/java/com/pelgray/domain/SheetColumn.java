@@ -1,4 +1,4 @@
-package com.pelgray;
+package com.pelgray.domain;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -1,5 +1,6 @@
-package com.pelgray;
+package com.pelgray.service;
 
+import com.pelgray.domain.Vacancy;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestException;

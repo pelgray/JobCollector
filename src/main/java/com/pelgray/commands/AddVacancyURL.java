@@ -1,11 +1,11 @@
 package com.pelgray.commands;
 
-import com.pelgray.GoogleSheetsService;
-import com.pelgray.HhApiService;
-import com.pelgray.Vacancy;
+import com.pelgray.domain.Vacancy;
 import com.pelgray.exceptions.DuplicateVacancyException;
 import com.pelgray.exceptions.GoogleConnectionException;
 import com.pelgray.exceptions.GoogleRequestException;
+import com.pelgray.service.GoogleSheetsService;
+import com.pelgray.service.HhApiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +26,7 @@ public class AddVacancyURL implements ICommandHandler {
 
     @Override
     public SendMessage handle(Message msg) {
-        SendMessage sm = new SendMessage(msg.getChatId(), "Добавлено").setReplyToMessageId(msg.getMessageId());
+        SendMessage result = new SendMessage(msg.getChatId(), "Добавлено").setReplyToMessageId(msg.getMessageId());
         try {
             String vacancyId = getVacancyId(msg);
             if (getSheetsService().isValueExist(vacancyId, 1)) {
@@ -35,13 +35,13 @@ public class AddVacancyURL implements ICommandHandler {
             Vacancy vacancy = HhApiService.getVacancy(vacancyId);
             getSheetsService().addVacancyOnNewLine(vacancy);
             LOG.info("Добавлена вакансия для пользователя {}", msg.getFrom().getUserName());
-            return sm;
+            return result;
         } catch (DuplicateVacancyException e) {
-            return sm.setText("Не добавлено.\n" + e.getMessage());
+            return result.setText("Не добавлено.\n" + e.getMessage());
         } catch (Exception e) {
             LOG.error(String.format("Неудачная попытка добавления вакансии (%s): %s",
                     msg.getFrom().getUserName(), e.getMessage()), e);
-            return sm.setText("Произошла непредвиденная ошибка.\n" + e.getMessage());
+            return result.setText("Произошла непредвиденная ошибка.\n" + e.getMessage());
         }
     }
 
