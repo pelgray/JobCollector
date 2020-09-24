@@ -41,6 +41,7 @@ jar {
 }
 
 shadowJar {
+    exclude 'config.properties'
     archiveClassifier.set('')
     minimize {
         exclude(dependency("org.springframework:spring-beans:${SPRING_VER}"))

@@ -10,5 +10,11 @@ build/
 target/
 logs/
 
+#Resources
+**/credentials.json
+
 #Other
 /Architecture.drawio
+/others
+/tokens
+
