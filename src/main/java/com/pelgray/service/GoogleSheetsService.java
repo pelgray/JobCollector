@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +37,8 @@ import java.util.stream.Collectors;
 public class GoogleSheetsService {
     private static final Logger LOG = LoggerFactory.getLogger(GoogleSheetsService.class);
     private static final String APPLICATION_NAME = "JobCollectorTest";
+    private static Sheets.Spreadsheets sheetsGateway;
+    private static Credential credential;
     /**
      * Id Google таблицы
      */
@@ -44,6 +47,17 @@ public class GoogleSheetsService {
     public GoogleSheetsService(String spreadsheetId) throws GoogleRequestException, GoogleConnectionException {
         this.spreadsheetId = spreadsheetId;
         updateHeaders();
+    }
+
+    /**
+     * Авторизация приложения и пользователя в Google для взаимодествия с таблицами
+     */
+    public static void initToken() throws GoogleConnectionException {
+        try {
+            credential = authorize();
+        } catch (IOException | GeneralSecurityException e) {
+            throw new GoogleConnectionException(e);
+        }
     }
 
     /**
@@ -177,37 +191,49 @@ public class GoogleSheetsService {
      * Создает экземпляр сервиса для доступа к таблицам
      */
     private static Sheets.Spreadsheets getSheets() throws GoogleConnectionException {
-        final NetHttpTransport httpTransport;
-        try {
-            httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-            return new Sheets.Builder(httpTransport, JacksonFactory.getDefaultInstance(), getCredentials(httpTransport))
-                    .setApplicationName(APPLICATION_NAME)
-                    .build()
-                    .spreadsheets();
-        } catch (GeneralSecurityException | IOException e) {
-            throw new GoogleConnectionException(e);
+        if (sheetsGateway == null) {
+            final NetHttpTransport httpTransport;
+            try {
+                httpTransport = GoogleNetHttpTransport.newTrustedTransport();
+                sheetsGateway = new Sheets
+                        .Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
+                        .setApplicationName(APPLICATION_NAME)
+                        .build()
+                        .spreadsheets();
+            } catch (GeneralSecurityException | IOException e) {
+                throw new GoogleConnectionException(e);
+            }
         }
+        return sheetsGateway;
     }
 
     /**
-     * Создает объект авторизации Credential.
+     * Создает объект авторизации <code>Credential</code>.
+     * <p>
+     * При первом запуске для указанного пользователя (<code>"user"</code>) создает token после успешной авторизации.
+     * Авторизация происходит либо через открытую в браузере страницу со входом в аккаунт Google, либо при ручном
+     * копировании/вставке URL, выводимой в консоль.
+     * При последующих запусках в авторизации не нуждается, если сохранена автоматически создаваемая папка
+     * <code>tokens</code>.
+     * <p>
+     * <code>credentials.json</code> - учетные данные авторизации, которые идентифицируют приложение на сервере Google
      *
-     * @throws IOException Если файл credentials.json не может быть найден.
+     * @throws IOException Если файл <code>credentials.json</code> не может быть найден.
      */
-    private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException {
+    private static Credential authorize() throws IOException, GeneralSecurityException {
         List<String> scopes = Collections.singletonList(SheetsScopes.SPREADSHEETS);
-        String credentialsFilePath = "/credentials.json";
-        String tokensDirectoryPath = "tokens";
         JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-        InputStream in = GoogleSheetsService.class.getResourceAsStream(credentialsFilePath);
-        if (in == null) {
-            throw new FileNotFoundException("Ресурс не найден: " + credentialsFilePath);
+        GoogleClientSecrets clientSecrets;
+        try {
+            InputStream in = new FileInputStream("credentials.json");
+            clientSecrets = GoogleClientSecrets.load(jsonFactory, new InputStreamReader(in));
+        } catch (FileNotFoundException e) {
+            LOG.error("Отстуствует файл для доступа к Google API: credentials.json", e);
+            throw e;
         }
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(jsonFactory, new InputStreamReader(in));
-
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
-                HTTP_TRANSPORT, jsonFactory, clientSecrets, scopes)
-                .setDataStoreFactory(new FileDataStoreFactory(new File(tokensDirectoryPath)))
+                GoogleNetHttpTransport.newTrustedTransport(), jsonFactory, clientSecrets, scopes)
+                .setDataStoreFactory(new FileDataStoreFactory(new File("tokens")))
                 .setAccessType("offline")
                 .build();
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();

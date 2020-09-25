@@ -37,6 +37,7 @@ public class AddVacancyURL implements ICommandHandler {
             LOG.info("Добавлена вакансия для пользователя {}", msg.getFrom().getUserName());
             return result;
         } catch (DuplicateVacancyException e) {
+            LOG.info("Дублирование вакансии для пользователя {}", msg.getFrom().getUserName());
             return result.setText("Не добавлено.\n" + e.getMessage());
         } catch (Exception e) {
             LOG.error(String.format("Неудачная попытка добавления вакансии (%s): %s",
