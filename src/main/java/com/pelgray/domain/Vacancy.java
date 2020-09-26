@@ -14,7 +14,6 @@ import com.pelgray.domain.requirements.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Vacancy {
     /**
@@ -29,51 +28,16 @@ public class Vacancy {
     String id;
 
     /**
+     * Короткое представление работодателя
+     */
+    @SheetColumn(name = "Компания")
+    Employer employer;
+
+    /**
      * Название вакансии
      */
     @SheetColumn(name = "Название")
     String name;
-
-    /**
-     * Регион размещения вакансии
-     */
-    Area area;
-
-    /**
-     * Специализации
-     */
-    @SheetColumn(name = "Специализации")
-    List<Specialization> specialization;
-
-    /**
-     * Ключевые навыки
-     */
-    @SheetColumn(name = "Ключевые навыки")
-    List<KeySkill> key_skills;
-
-    /**
-     * График работы
-     */
-    @SheetColumn(name = "График работы")
-    Schedule schedule;
-
-    /**
-     * Требуемый опыт работы
-     */
-    @SheetColumn(name = "Требуемый опыт")
-    Experience experience;
-
-    /**
-     * Адрес вакансии
-     */
-    @SheetColumn(name = "Адрес")
-    Address address;
-
-    /**
-     * Тип занятости
-     */
-    @SheetColumn(name = "Тип занятости")
-    Employment employment;
 
     /**
      * Оклад
@@ -82,16 +46,51 @@ public class Vacancy {
     Salary salary;
 
     /**
-     * Короткое представление работодателя
+     * Требуемый опыт работы
      */
-    @SheetColumn(name = "Компания")
-    Employer employer;
+    @SheetColumn(name = "Требуемый опыт")
+    Experience experience;
+
+    /**
+     * Ключевые навыки
+     */
+    @SheetColumn(name = "Ключевые навыки")
+    List<KeySkill> key_skills;
+
+    /**
+     * Адрес вакансии
+     */
+    @SheetColumn(name = "Адрес")
+    Address address;
+
+    /**
+     * График работы
+     */
+    @SheetColumn(name = "График работы")
+    Schedule schedule;
+
+    /**
+     * Тип занятости
+     */
+    @SheetColumn(name = "Тип занятости")
+    Employment employment;
+
+    /**
+     * Специализации
+     */
+    @SheetColumn(name = "Специализации")
+    List<Specialization> specialization;
 
     /**
      * В архиве
      */
     @SheetColumn(name = "В архиве")
     boolean archived;
+
+    /**
+     * Регион размещения вакансии
+     */
+    Area area;
 
     /**
      * Информация о наличии прикрепленного тестового задании к вакансии. В случае присутствия теста - true.
@@ -150,7 +149,7 @@ public class Vacancy {
                     if (!(fieldValue instanceof List)) {
                         tmp = fieldValue.toString();
                     } else if (!((List<?>) fieldValue).isEmpty()) {
-                        tmp = Stream.of(fieldValue).map(Object::toString).collect(Collectors.joining(", "));
+                        tmp = ((List<?>) fieldValue).stream().map(Object::toString).collect(Collectors.joining(", "));
                     }
                 }
                 result.add(tmp);
