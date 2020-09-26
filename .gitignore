@@ -10,5 +10,11 @@ build/
 target/
 logs/
 
+#Resources
+/client_secrets.json
+
 #Other
 /Architecture.drawio
+/others
+/tokens
+

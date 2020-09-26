@@ -58,14 +58,23 @@ public class TelegramBotService extends TelegramLongPollingBot {
             return;
         }
         Message msg = update.getMessage();
-        LOG.debug("Получено сообщение от пользователя {}", msg.getFrom().getUserName());
+        LOG.debug("Получено сообщение \"{}\" от пользователя {}", msg.getText(), msg.getFrom().getUserName());
 
         try {
             execute(handleCommand(msg));
-            LOG.debug("Сообщение от пользователя {} обработано", msg.getFrom().getUserName());
+            LOG.debug("Сообщение \"{}\" от пользователя {} обработано", msg.getText(), msg.getFrom().getUserName());
         } catch (TelegramApiException e) {
             LOG.error("Не удалось выполнить отправку ответного сообщения", e);
         }
+    }
+
+    /**
+     * Проверка наличия параметров
+     *
+     * @return {@code true}, если хотя бы один параметр не указан
+     */
+    public boolean parametersIsEmpty() {
+        return (botUsername.isEmpty() || botToken.isEmpty());
     }
 
     /**
