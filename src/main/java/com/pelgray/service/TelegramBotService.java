@@ -69,6 +69,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     /**
+     * Проверка наличия параметров
+     *
+     * @return `true`, если хотя бы один параметр не указан
+     */
+    public boolean parametersIsEmpty() {
+        return (botUsername.isEmpty() || botToken.isEmpty());
+    }
+
+    /**
      * Метод возвращает ответ по полученному сообщению
      *
      * @param message сообщение от пользователя

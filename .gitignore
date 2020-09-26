@@ -11,7 +11,7 @@ target/
 logs/
 
 #Resources
-**/credentials.json
+/client_secrets.json
 
 #Other
 /Architecture.drawio

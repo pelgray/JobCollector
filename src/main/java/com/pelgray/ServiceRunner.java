@@ -23,6 +23,12 @@ public class ServiceRunner {
         long start = System.currentTimeMillis();
         ApiContextInitializer.init();
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ServiceRunner.class);
+        TelegramBotService tgBotService = context.getBean("telegramBotService", TelegramBotService.class);
+        if (tgBotService.parametersIsEmpty()) {
+            LOG.error("В файле \"config.properties\" одно или несколько параметров с префиксом \"tgBot\" пусты." +
+                    "\nСервис не может быть запущен.");
+            return;
+        }
         try {
             GoogleSheetsService.initToken();
             new TelegramBotsApi().registerBot(context.getBean("telegramBotService", TelegramBotService.class));

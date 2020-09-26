@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -36,7 +37,6 @@ import java.util.stream.Collectors;
 
 public class GoogleSheetsService {
     private static final Logger LOG = LoggerFactory.getLogger(GoogleSheetsService.class);
-    private static final String APPLICATION_NAME = "JobCollectorTest";
     private static Sheets.Spreadsheets sheetsGateway;
     private static Credential credential;
     /**
@@ -50,7 +50,7 @@ public class GoogleSheetsService {
     }
 
     /**
-     * Авторизация приложения и пользователя в Google для взаимодествия с таблицами
+     * Авторизация приложения и пользователя в Google для взаимодействия с таблицами
      */
     public static void initToken() throws GoogleConnectionException {
         try {
@@ -197,7 +197,7 @@ public class GoogleSheetsService {
                 httpTransport = GoogleNetHttpTransport.newTrustedTransport();
                 sheetsGateway = new Sheets
                         .Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
-                        .setApplicationName(APPLICATION_NAME)
+                        .setApplicationName("JobCollector")
                         .build()
                         .spreadsheets();
             } catch (GeneralSecurityException | IOException e) {
@@ -216,19 +216,23 @@ public class GoogleSheetsService {
      * При последующих запусках в авторизации не нуждается, если сохранена автоматически создаваемая папка
      * <code>tokens</code>.
      * <p>
-     * <code>credentials.json</code> - учетные данные авторизации, которые идентифицируют приложение на сервере Google
+     * <code>client_secrets.json</code> - учетные данные авторизации, которые идентифицируют приложение на сервере Google
      *
-     * @throws IOException Если файл <code>credentials.json</code> не может быть найден.
+     * @throws IOException Если файл <code>client_secrets.json</code> не может быть найден.
      */
     private static Credential authorize() throws IOException, GeneralSecurityException {
         List<String> scopes = Collections.singletonList(SheetsScopes.SPREADSHEETS);
         JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+        String credentialFilePath = System.getProperty("app.secrets");
+        if (credentialFilePath == null) {
+            credentialFilePath = "";
+        }
         GoogleClientSecrets clientSecrets;
         try {
-            InputStream in = new FileInputStream("credentials.json");
+            InputStream in = new FileInputStream(Paths.get(credentialFilePath, "client_secrets.json").toString());
             clientSecrets = GoogleClientSecrets.load(jsonFactory, new InputStreamReader(in));
         } catch (FileNotFoundException e) {
-            LOG.error("Отстуствует файл для доступа к Google API: credentials.json", e);
+            LOG.error("Отсутствует файл для доступа к Google API: client_secrets.json", e);
             throw e;
         }
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
