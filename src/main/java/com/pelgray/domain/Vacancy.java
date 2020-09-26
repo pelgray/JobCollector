@@ -131,7 +131,7 @@ public class Vacancy {
 
     /**
      * @param orderedFields список полей класса в той же последовательности, как они указаны в таблице
-     * @return параметры вакансии, соответсвующие полученному списку полей
+     * @return параметры вакансии, соответствующие полученному списку полей
      * @throws ReflectiveOperationException возникает, если нужного поля не существует, либо оно недоступно
      */
     public List<Object> getFieldsDataList(List<String> orderedFields) throws ReflectiveOperationException {

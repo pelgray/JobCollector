@@ -1,9 +1,12 @@
+import java.util.jar.Attributes.Name
+
 plugins {
     id 'java'
     id 'com.github.johnrengelman.shadow' version '6.0.0'
 }
 
 group 'com.pelgray'
+version '1.0.0'
 
 sourceCompatibility = 1.8
 
@@ -32,8 +35,9 @@ dependencies {
 jar {
     manifest {
         attributes(
-                'Project': project.name,
-                'Main-Class': 'com.pelgray.ServiceRunner',
+                (Name.SPECIFICATION_TITLE.toString()): project.name,
+                (Name.SPECIFICATION_VERSION.toString()): project.version,
+                (Name.MAIN_CLASS.toString()): 'com.pelgray.ServiceRunner',
                 'Description': 'A service that can send a link from hh.ru via Telegram to Google Sheets.',
                 'Built-Date': new Date()
         )
