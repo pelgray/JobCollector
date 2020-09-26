@@ -31,7 +31,7 @@ public class ServiceRunner {
         }
         try {
             GoogleSheetsService.initToken();
-            new TelegramBotsApi().registerBot(context.getBean("telegramBotService", TelegramBotService.class));
+            new TelegramBotsApi().registerBot(tgBotService);
         } catch (TelegramApiException e) {
             LOG.error("Ошибка при подключении к Telegram боту", e);
             throw e;

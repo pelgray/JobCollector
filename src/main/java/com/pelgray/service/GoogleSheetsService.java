@@ -46,6 +46,7 @@ public class GoogleSheetsService {
 
     public GoogleSheetsService(String spreadsheetId) throws GoogleRequestException, GoogleConnectionException {
         this.spreadsheetId = spreadsheetId;
+        initToken();
         updateHeaders();
     }
 
@@ -53,6 +54,9 @@ public class GoogleSheetsService {
      * Авторизация приложения и пользователя в Google для взаимодействия с таблицами
      */
     public static void initToken() throws GoogleConnectionException {
+        if (credential != null) {
+            return;
+        }
         try {
             credential = authorize();
         } catch (IOException | GeneralSecurityException e) {
@@ -208,25 +212,22 @@ public class GoogleSheetsService {
     }
 
     /**
-     * Создает объект авторизации <code>Credential</code>.
+     * Создает объект авторизации {@code Credential}.
      * <p>
-     * При первом запуске для указанного пользователя (<code>"user"</code>) создает token после успешной авторизации.
+     * При первом запуске для указанного пользователя ({@code "user"}) создает token после успешной авторизации.
      * Авторизация происходит либо через открытую в браузере страницу со входом в аккаунт Google, либо при ручном
      * копировании/вставке URL, выводимой в консоль.
      * При последующих запусках в авторизации не нуждается, если сохранена автоматически создаваемая папка
-     * <code>tokens</code>.
+     * {@code tokens}.
      * <p>
-     * <code>client_secrets.json</code> - учетные данные авторизации, которые идентифицируют приложение на сервере Google
+     * {@code client_secrets.json} - учетные данные авторизации, которые идентифицируют приложение на сервере Google
      *
-     * @throws IOException Если файл <code>client_secrets.json</code> не может быть найден.
+     * @throws IOException Если файл {@code client_secrets.json} не может быть найден.
      */
     private static Credential authorize() throws IOException, GeneralSecurityException {
         List<String> scopes = Collections.singletonList(SheetsScopes.SPREADSHEETS);
         JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-        String credentialFilePath = System.getProperty("app.secrets");
-        if (credentialFilePath == null) {
-            credentialFilePath = "";
-        }
+        String credentialFilePath = System.getProperty("app.secrets", "");
         GoogleClientSecrets clientSecrets;
         try {
             InputStream in = new FileInputStream(Paths.get(credentialFilePath, "client_secrets.json").toString());

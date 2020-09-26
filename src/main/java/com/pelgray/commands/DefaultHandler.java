@@ -15,7 +15,7 @@ public class DefaultHandler implements ICommandHandler {
     }
 
     /**
-     * @return false, поскольку это класс ответа по умолчанию, в котором нет обработки команды
+     * @return {@code false}, поскольку это класс ответа по умолчанию, в котором нет обработки команды
      */
     @Override
     public boolean accept(Message msg) {
