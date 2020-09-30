@@ -9,6 +9,10 @@ public class KeySkill {
      */
     String name;
 
+    public KeySkill(String name) {
+        this.name = name;
+    }
+
     @Override
     public String toString() {
         return name;
