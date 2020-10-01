@@ -70,7 +70,7 @@ public class AddVacancyURL implements ICommandHandler {
 
     private GoogleSheetsService getSheetsService() throws GoogleRequestException, GoogleConnectionException {
         if (sheetsService == null) {
-            sheetsService = new GoogleSheetsService(spreadsheetId);
+            sheetsService = GoogleSheetsService.createService(spreadsheetId);
         }
         return sheetsService;
     }

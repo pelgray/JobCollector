@@ -44,10 +44,15 @@ public class GoogleSheetsService {
      */
     private final String spreadsheetId;
 
-    public GoogleSheetsService(String spreadsheetId) throws GoogleRequestException, GoogleConnectionException {
+    GoogleSheetsService(String spreadsheetId) {
         this.spreadsheetId = spreadsheetId;
+    }
+
+    public static GoogleSheetsService createService(String spreadsheetId) throws GoogleRequestException, GoogleConnectionException {
+        GoogleSheetsService result = new GoogleSheetsService(spreadsheetId);
         initToken();
-        updateHeaders();
+        result.updateHeaders();
+        return result;
     }
 
     /**
@@ -122,7 +127,7 @@ public class GoogleSheetsService {
     /**
      * Получение списка полей, соответствующих заголовкам в порядке, указанном в таблице
      */
-    private List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
+    List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
         // Получаем актуальные заголовки таблицы
         List<List<Object>> values = getData("1:1");
         if (values == null || values.isEmpty()) {
@@ -161,7 +166,7 @@ public class GoogleSheetsService {
      * @param range  диапазон в A1 нотации
      * @return количество измененных ячеек
      */
-    private Integer appendData(List<List<Object>> values, String range)
+    Integer appendData(List<List<Object>> values, String range)
             throws GoogleConnectionException, GoogleRequestException {
         ValueRange body = new ValueRange().setValues(values);
         try {
@@ -180,7 +185,7 @@ public class GoogleSheetsService {
      * @param range диапазон в A1 нотации
      * @return данные из указанного диапазона в формате списка из списков данных строк
      */
-    private List<List<Object>> getData(String range) throws GoogleConnectionException, GoogleRequestException {
+    List<List<Object>> getData(String range) throws GoogleConnectionException, GoogleRequestException {
         try {
             return getSheets().values()
                     .get(spreadsheetId, range)
@@ -194,7 +199,7 @@ public class GoogleSheetsService {
     /**
      * Создает экземпляр сервиса для доступа к таблицам
      */
-    private static Sheets.Spreadsheets getSheets() throws GoogleConnectionException {
+    static Sheets.Spreadsheets getSheets() throws GoogleConnectionException {
         if (sheetsGateway == null) {
             final NetHttpTransport httpTransport;
             try {
@@ -224,7 +229,7 @@ public class GoogleSheetsService {
      *
      * @throws IOException Если файл {@code client_secrets.json} не может быть найден.
      */
-    private static Credential authorize() throws IOException, GeneralSecurityException {
+    static Credential authorize() throws IOException, GeneralSecurityException {
         List<String> scopes = Collections.singletonList(SheetsScopes.SPREADSHEETS);
         JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
         String credentialFilePath = System.getProperty("app.secrets", "");
