@@ -24,21 +24,22 @@ public class VacancyTest extends Assert {
         vacancy.specialization = new ArrayList<>(0);
     }
 
-    @Test
+    @Test(description = "Получение списка значений полей объекта Vacancy")
     public void testGetFieldsDataList_fieldValue() throws ReflectiveOperationException {
         List<String> orderedFields = Arrays.asList("", "name", "employer", "alternate_url");
         List<Object> expectedList = Arrays.asList("", vacancy.name, vacancy.employer.toString(), "-");
         assertEquals(vacancy.getFieldsDataList(orderedFields), expectedList, "Некорректный вывод значений полей");
     }
 
-    @Test
+    @Test(description = "Получение списка значений полей-списков объекта Vacancy")
     public void testGetFieldsDataList_listValue() throws ReflectiveOperationException {
         List<String> orderedFields = Arrays.asList("key_skills", "specialization");
         List<Object> expectedList = Arrays.asList("skill1, skill2, skill3", "-");
         assertEquals(vacancy.getFieldsDataList(orderedFields), expectedList, "Некорректный вывод значений списков");
     }
 
-    @Test(expectedExceptions = ReflectiveOperationException.class)
+    @Test(description = "Выброс исключения при попытке обратиться к несуществующему полю класса Vacancy",
+            expectedExceptions = ReflectiveOperationException.class)
     public void testExceptionGetFieldsDataList() throws ReflectiveOperationException {
         vacancy.getFieldsDataList(Collections.singletonList("nameTestABC"));
     }

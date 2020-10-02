@@ -39,10 +39,8 @@ public class AddVacancyURLTest extends Assert {
         };
     }
 
-    /**
-     * Проверка покрытия регулярным выражением URL вакансий с сайта hh.ru
-     */
-    @Test(dataProvider = "acceptData")
+    @Test(description = "Покрытие регулярным выражением URL вакансий с сайта hh.ru",
+            dataProvider = "acceptData")
     public void testAccept(String msg, boolean expected) throws NoSuchFieldException, IllegalAccessException {
         assertEquals(command.accept(getMessage(msg)), expected,
                 String.format("RegEx%s должен покрывать случай \"%s\"", expected ? "" : " не", msg));
@@ -59,7 +57,7 @@ public class AddVacancyURLTest extends Assert {
         };
     }
 
-    @Test(dataProvider = "vacancyURLData")
+    @Test(description = "Извлечение URL вакансии из текста сообщения", dataProvider = "vacancyURLData")
     public void testGetVacancyURL(String msg, String url) throws NoSuchFieldException, IllegalAccessException {
         assertEquals(command.getVacancyURL(getMessage(msg)), msg,
                 String.format("Некорректное извлечение ссылки на вакансию из текста сообщения \"%s\"", msg));
@@ -76,7 +74,8 @@ public class AddVacancyURLTest extends Assert {
         };
     }
 
-    @Test(dataProvider = "vacancyIdData")
+    @Test(description = "Извлечение URL вакансии из текста сообщения",
+            dataProvider = "vacancyIdData")
     public void testGetVacancyId(String msg, String expectedId) throws Exception {
         assertEquals(command.getVacancyId(getMessage(msg)), expectedId,
                 String.format("Некорректное извлечение ID вакансии из текста сообщения \"%s\"", msg));

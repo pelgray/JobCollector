@@ -8,12 +8,14 @@ import org.testng.annotations.Test;
 
 public class HhApiServiceTest extends Assert {
 
-    @Test(expectedExceptions = VacancyNotFoundException.class)
+    @Test(description = "Выброс VacancyNotFoundException, когда вакансия не найдена",
+            expectedExceptions = VacancyNotFoundException.class)
     public void testVacancyNotFound() throws Exception {
         HhApiService.checkResponse(null, false);
     }
 
-    @Test(expectedExceptions = UnirestException.class)
+    @Test(description = "Выброс UnirestException, когда во время запроса произошла ошибка",
+            expectedExceptions = UnirestException.class)
     public void testThrowUnirestException() throws Exception {
         HhApiService.checkResponse(new UnirestParsingException("Test", new Exception()), false);
     }

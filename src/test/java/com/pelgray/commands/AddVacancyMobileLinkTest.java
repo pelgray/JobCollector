@@ -37,7 +37,7 @@ public class AddVacancyMobileLinkTest extends AddVacancyURLTest {
     }
 
     @Override
-    @Test(dataProvider = "vacancyURLData")
+    @Test(description = "Извлечение URL вакансии из текста сообщения", dataProvider = "vacancyURLData")
     public void testGetVacancyURL(String msg, String url) throws NoSuchFieldException, IllegalAccessException {
         assertEquals(command.getVacancyURL(getMessage(msg)), url,
                 String.format("Некорректное извлечение ссылки на вакансию из текста сообщения \"%s\"", msg));
