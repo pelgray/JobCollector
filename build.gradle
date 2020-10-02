@@ -37,10 +37,14 @@ dependencies {
 
     // Test
     testCompile group: 'org.testng', name: 'testng', version: '7.3.0'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.5.13'
 }
 
 test {
-    useTestNG()
+    useTestNG() {
+        useDefaultListeners = true
+    }
+    reports.html.enabled = false
 }
 
 jar {
