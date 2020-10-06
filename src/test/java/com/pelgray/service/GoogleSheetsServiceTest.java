@@ -6,6 +6,7 @@ import com.pelgray.exceptions.GoogleConnectionException;
 import com.pelgray.exceptions.GoogleRequestException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.mockito.Mockito;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -18,27 +19,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.description;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-
-public class GoogleSheetsServiceTest extends Assert {
-
+public class GoogleSheetsServiceTest {
     @Test(description = "Определение наличия значения в списке. Определение адреса столбца в A1-нотации по его номеру.")
     public void testIsValueExist() throws GoogleRequestException, GoogleConnectionException {
-        GoogleSheetsService service = spy(new GoogleSheetsService(""));
+        // Given
+        GoogleSheetsService service = Mockito.spy(new GoogleSheetsService(""));
         List<List<Object>> values = Arrays.asList(Collections.singletonList("item1"),
                 Collections.singletonList("item2"), Collections.singletonList("item3"));
 
-        doReturn(values).when(service).getData(any());
-        String message = "Некорректное определение наличия значения в списке";
-        assertTrue(service.isValueExist("item3", 2), message);
-        assertFalse(service.isValueExist("item4", 4), message);
+        // When
+        Mockito.doReturn(values).when(service).getData(Mockito.any());
 
-        InOrder inOrder = inOrder(service);
+        // Then
+        String message = "Некорректное определение наличия значения в списке";
+        Assert.assertTrue(service.isValueExist("item3", 2), message);
+        Assert.assertFalse(service.isValueExist("item4", 4), message);
+
+        InOrder inOrder = Mockito.inOrder(service);
         // Проверка определения адреса столбца: метод getData() вызван в нужном порядке и нужными параметрами
         inOrder.verify(service).getData("B:B");
         inOrder.verify(service).getData("D:D");
@@ -62,25 +59,34 @@ public class GoogleSheetsServiceTest extends Assert {
                 fieldColumnNames.get(orderedFields.remove((int) (Math.random() * (orderedFields.size() - 2) + 1)))
         );
 
-        GoogleSheetsService service = spy(new GoogleSheetsService(""));
-        doReturn(orderedFields).when(service).getOrderedFields();
-        doReturn(missingHeaders.size()).when(service).appendData(any(), any());
+        // Given
+        GoogleSheetsService service = Mockito.spy(new GoogleSheetsService(""));
+
+        // When
+        Mockito.doReturn(orderedFields).when(service).getOrderedFields();
+        Mockito.doReturn(missingHeaders.size()).when(service).appendData(Mockito.any(), Mockito.any());
 
         service.updateHeaders();
 
+        // Then
         ArgumentCaptor<List<List<Object>>> requestCaptor = ArgumentCaptor.forClass(List.class);
-        verify(service, description("Происходит добавление неверных заголовков в таблицу"))
-                .appendData(requestCaptor.capture(), any());
+        Mockito.verify(service, Mockito.description("Происходит добавление неверных заголовков в таблицу"))
+                .appendData(requestCaptor.capture(), Mockito.any());
 
         // проверяем, что в appendData() был передан всего один объект
-        assertEquals(requestCaptor.getAllValues().size(), 1);
+        Assert.assertEquals(requestCaptor.getAllValues().size(), 1,
+                "Метод appendData() вызван больше одного раза");
 
         List<List<Object>> appendedData = requestCaptor.getValue();
         // проверяем, что один элемент в списке (изменяется одна строка)
-        assertEquals(appendedData.size(), 1);
+        Assert.assertEquals(appendedData.size(), 1,
+                "Происходит изменение больше одной заголовочной строки");
+        // проверяем, что в пришедшем списке нужное количество значений
+        Assert.assertEquals(appendedData.get(0).size(), missingHeaders.size(),
+                "Добавляется некорректное количество заголовков в таблицу");
         // проверяем, что в пришедшем списке присутствуют правильные значения
         for (Object header : appendedData.get(0)) {
-            assertTrue(missingHeaders.contains(header),
+            Assert.assertTrue(missingHeaders.contains(header),
                     String.format("В список добавлен заголовок %s, которого там быть не должно", header));
         }
     }
@@ -98,15 +104,20 @@ public class GoogleSheetsServiceTest extends Assert {
         List<Object> testHeaders = new ArrayList<>(columnFieldNames.keySet());
         List<String> expectedResult = new ArrayList<>(columnFieldNames.values());
         int customHeadersNum = 2;
+        // добавим пользовательские заголовки
         while (customHeadersNum-- > 0) {
             testHeaders.add((int) (Math.random() * (testHeaders.size() - 1)), "TestHeader" + customHeadersNum);
             expectedResult.add(testHeaders.indexOf("TestHeader" + customHeadersNum), "");
         }
 
-        GoogleSheetsService service = spy(new GoogleSheetsService(""));
-        doReturn(Collections.singletonList(testHeaders)).when(service).getData(any());
+        // Given
+        GoogleSheetsService service = Mockito.spy(new GoogleSheetsService(""));
 
-        assertEquals(service.getOrderedFields(), expectedResult,
+        // When
+        Mockito.doReturn(Collections.singletonList(testHeaders)).when(service).getData(Mockito.any());
+
+        // Then
+        Assert.assertEquals(service.getOrderedFields(), expectedResult,
                 "Некорректное преобразование заголовков в названия полей класса Vacancy");
     }
 }

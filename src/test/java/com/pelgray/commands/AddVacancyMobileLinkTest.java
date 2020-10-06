@@ -1,17 +1,13 @@
 package com.pelgray.commands;
 
-import org.testng.annotations.BeforeClass;
+import com.pelgray.TestHelper;
+import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-public class AddVacancyMobileLinkTest extends AddVacancyURLTest {
-    @Override
-    @BeforeClass
-    public void setUpCommand() {
-        command = new AddVacancyMobileLink();
-    }
+public class AddVacancyMobileLinkTest {
+    private final AddVacancyMobileLink command = new AddVacancyMobileLink();
 
-    @Override
     @DataProvider
     public Object[][] acceptData() {
         return new Object[][]{
@@ -26,7 +22,13 @@ public class AddVacancyMobileLinkTest extends AddVacancyURLTest {
         };
     }
 
-    @Override
+    @Test(description = "Покрытие регулярным выражением URL вакансий с сайта hh.ru",
+            dataProvider = "acceptData")
+    public void testAccept(String msg, boolean expected) {
+        Assert.assertEquals(command.accept(TestHelper.getMessage(msg)), expected,
+                String.format("RegEx%s должен покрывать случай \"%s\"", expected ? "" : " не", msg));
+    }
+
     @DataProvider
     public Object[][] vacancyURLData() {
         return new Object[][]{
@@ -36,10 +38,9 @@ public class AddVacancyMobileLinkTest extends AddVacancyURLTest {
         };
     }
 
-    @Override
     @Test(description = "Извлечение URL вакансии из текста сообщения", dataProvider = "vacancyURLData")
-    public void testGetVacancyURL(String msg, String url) throws NoSuchFieldException, IllegalAccessException {
-        assertEquals(command.getVacancyURL(getMessage(msg)), url,
+    public void testGetVacancyURL(String msg, String url) {
+        Assert.assertEquals(command.getVacancyURL(TestHelper.getMessage(msg)), url,
                 String.format("Некорректное извлечение ссылки на вакансию из текста сообщения \"%s\"", msg));
     }
 }

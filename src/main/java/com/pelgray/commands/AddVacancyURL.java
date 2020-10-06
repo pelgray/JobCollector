@@ -59,7 +59,7 @@ public class AddVacancyURL implements ICommandHandler {
         return msg.getText();
     }
 
-    protected String getVacancyId(Message msg) throws Exception {
+    String getVacancyId(Message msg) throws Exception {
         String url = getVacancyURL(msg);
         Matcher matcher = Pattern.compile("\\d+").matcher(url);
         if (matcher.find()) {

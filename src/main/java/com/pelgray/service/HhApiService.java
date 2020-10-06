@@ -16,15 +16,21 @@ public class HhApiService {
 
     public static Vacancy getVacancy(String id) throws Exception {
         HttpResponse<Vacancy> response = Unirest.get(String.format("%s%s", API_DOMAIN, id)).asObject(Vacancy.class);
-        checkResponse(response.getParsingError().orElse(null), response.isSuccess());
+        checkResponse(response.getParsingError().orElse(null), response.getStatus());
         return response.getBody();
     }
 
-    static void checkResponse(UnirestParsingException parsingError, boolean success) throws Exception {
-        if (!success) {    // если код ответа не из серии 200-х
-            throw parsingError != null ?
-                    new UnirestException("Ошибка во время исполнения запроса к api.hh.ru", parsingError) :
-                    new VacancyNotFoundException();
+    static void checkResponse(UnirestParsingException parsingError, int status) throws Exception {
+        // если код ответа из серии 200-х и ошибки нет, значит запрос прошел успешно
+        if (status >= 200 && status < 300 && parsingError == null) {
+            return;
+        }
+
+        switch (status) {
+            case 404:
+                throw new VacancyNotFoundException();
+            default:
+                throw new UnirestException("Ошибка во время исполнения запроса к api.hh.ru", parsingError);
         }
     }
 }

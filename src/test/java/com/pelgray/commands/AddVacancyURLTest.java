@@ -1,28 +1,12 @@
 package com.pelgray.commands;
 
-import org.telegram.telegrambots.meta.api.objects.Message;
+import com.pelgray.TestHelper;
 import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.reflect.Field;
-
-public class AddVacancyURLTest extends Assert {
-    protected AddVacancyURL command;
-
-    @BeforeClass
-    public void setUpCommand() {
-        command = new AddVacancyURL();
-    }
-
-    Message getMessage(String txt) throws IllegalAccessException, NoSuchFieldException {
-        Message result = new Message();
-        Field textField = Message.class.getDeclaredField("text");
-        textField.setAccessible(true);
-        textField.set(result, txt);
-        return result;
-    }
+public class AddVacancyURLTest {
+    private final AddVacancyURL command = new AddVacancyURL();
 
     @DataProvider
     public Object[][] acceptData() {
@@ -41,25 +25,25 @@ public class AddVacancyURLTest extends Assert {
 
     @Test(description = "Покрытие регулярным выражением URL вакансий с сайта hh.ru",
             dataProvider = "acceptData")
-    public void testAccept(String msg, boolean expected) throws NoSuchFieldException, IllegalAccessException {
-        assertEquals(command.accept(getMessage(msg)), expected,
+    public void testAccept(String msg, boolean expected) {
+        Assert.assertEquals(command.accept(TestHelper.getMessage(msg)), expected,
                 String.format("RegEx%s должен покрывать случай \"%s\"", expected ? "" : " не", msg));
     }
 
     @DataProvider
     public Object[][] vacancyURLData() {
         return new Object[][]{
-                {"https://spb.hh.ru/vacancy/123456", null},
-                {"http://spb.hh.ru/vacancy/123456", null},
-                {"https://hh.ru/vacancy/123456", null},
-                {"https://hh.ru/vacancy/123456?query=abcd", null},
-                {"https://abr.hh.ru/vacancy/123456?query=abcd&ans=dcba", null},
+                {"https://spb.hh.ru/vacancy/123456"},
+                {"http://spb.hh.ru/vacancy/123456"},
+                {"https://hh.ru/vacancy/123456"},
+                {"https://hh.ru/vacancy/123456?query=abcd"},
+                {"https://abr.hh.ru/vacancy/123456?query=abcd&ans=dcba"},
         };
     }
 
     @Test(description = "Извлечение URL вакансии из текста сообщения", dataProvider = "vacancyURLData")
-    public void testGetVacancyURL(String msg, String url) throws NoSuchFieldException, IllegalAccessException {
-        assertEquals(command.getVacancyURL(getMessage(msg)), msg,
+    public void testGetVacancyURL(String msg) {
+        Assert.assertEquals(command.getVacancyURL(TestHelper.getMessage(msg)), msg,
                 String.format("Некорректное извлечение ссылки на вакансию из текста сообщения \"%s\"", msg));
     }
 
@@ -77,7 +61,7 @@ public class AddVacancyURLTest extends Assert {
     @Test(description = "Извлечение URL вакансии из текста сообщения",
             dataProvider = "vacancyIdData")
     public void testGetVacancyId(String msg, String expectedId) throws Exception {
-        assertEquals(command.getVacancyId(getMessage(msg)), expectedId,
+        Assert.assertEquals(command.getVacancyId(TestHelper.getMessage(msg)), expectedId,
                 String.format("Некорректное извлечение ID вакансии из текста сообщения \"%s\"", msg));
     }
 }
