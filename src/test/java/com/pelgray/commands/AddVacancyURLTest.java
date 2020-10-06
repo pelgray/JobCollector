@@ -1,6 +1,5 @@
 package com.pelgray.commands;
 
-import com.pelgray.TestHelper;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -26,7 +25,7 @@ public class AddVacancyURLTest {
     @Test(description = "Покрытие регулярным выражением URL вакансий с сайта hh.ru",
             dataProvider = "acceptData")
     public void testAccept(String msg, boolean expected) {
-        Assert.assertEquals(command.accept(TestHelper.getMessage(msg)), expected,
+        Assert.assertEquals(command.accept(CommandsTestHelper.getMessage(msg)), expected,
                 String.format("RegEx%s должен покрывать случай \"%s\"", expected ? "" : " не", msg));
     }
 
@@ -43,7 +42,7 @@ public class AddVacancyURLTest {
 
     @Test(description = "Извлечение URL вакансии из текста сообщения", dataProvider = "vacancyURLData")
     public void testGetVacancyURL(String msg) {
-        Assert.assertEquals(command.getVacancyURL(TestHelper.getMessage(msg)), msg,
+        Assert.assertEquals(command.getVacancyURL(CommandsTestHelper.getMessage(msg)), msg,
                 String.format("Некорректное извлечение ссылки на вакансию из текста сообщения \"%s\"", msg));
     }
 
@@ -61,7 +60,7 @@ public class AddVacancyURLTest {
     @Test(description = "Извлечение URL вакансии из текста сообщения",
             dataProvider = "vacancyIdData")
     public void testGetVacancyId(String msg, String expectedId) throws Exception {
-        Assert.assertEquals(command.getVacancyId(TestHelper.getMessage(msg)), expectedId,
+        Assert.assertEquals(command.getVacancyId(CommandsTestHelper.getMessage(msg)), expectedId,
                 String.format("Некорректное извлечение ID вакансии из текста сообщения \"%s\"", msg));
     }
 }

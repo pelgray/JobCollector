@@ -1,6 +1,5 @@
 package com.pelgray.commands;
 
-import com.pelgray.TestHelper;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -25,7 +24,7 @@ public class AddVacancyMobileLinkTest {
     @Test(description = "Покрытие регулярным выражением URL вакансий с сайта hh.ru",
             dataProvider = "acceptData")
     public void testAccept(String msg, boolean expected) {
-        Assert.assertEquals(command.accept(TestHelper.getMessage(msg)), expected,
+        Assert.assertEquals(command.accept(CommandsTestHelper.getMessage(msg)), expected,
                 String.format("RegEx%s должен покрывать случай \"%s\"", expected ? "" : " не", msg));
     }
 
@@ -40,7 +39,7 @@ public class AddVacancyMobileLinkTest {
 
     @Test(description = "Извлечение URL вакансии из текста сообщения", dataProvider = "vacancyURLData")
     public void testGetVacancyURL(String msg, String url) {
-        Assert.assertEquals(command.getVacancyURL(TestHelper.getMessage(msg)), url,
+        Assert.assertEquals(command.getVacancyURL(CommandsTestHelper.getMessage(msg)), url,
                 String.format("Некорректное извлечение ссылки на вакансию из текста сообщения \"%s\"", msg));
     }
 }
