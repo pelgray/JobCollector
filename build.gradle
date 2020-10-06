@@ -20,16 +20,31 @@ String SPRING_VER = '5.2.8.RELEASE'
 String SLF4J_VER = '1.7.30'
 
 dependencies {
-    compile group: 'org.telegram', name: 'telegrambots', version: '4.9.1'
-    compile group: 'org.slf4j', name: 'slf4j-simple', version: SLF4J_VER
-    compile group: 'org.slf4j', name: 'slf4j-api', version: SLF4J_VER
     compile group: 'org.springframework', name: 'spring-core', version: SPRING_VER
     compile group: 'org.springframework', name: 'spring-beans', version: SPRING_VER
     compile group: 'org.springframework', name: 'spring-context', version: SPRING_VER
+    compile group: 'com.konghq', name: 'unirest-java', version: '3.10.00'
+
+    // API
+    compile group: 'org.telegram', name: 'telegrambots', version: '4.9.1'
     compile group: 'com.google.api-client', name: 'google-api-client', version: '1.30.10'
     compile group: 'com.google.oauth-client', name: 'google-oauth-client-jetty', version: '1.30.6'
     compile group: 'com.google.apis', name: 'google-api-services-sheets', version: 'v4-rev612-1.25.0'
-    compile group: 'com.konghq', name: 'unirest-java', version: '3.10.00'
+
+    // Logger
+    compile group: 'org.slf4j', name: 'slf4j-simple', version: SLF4J_VER
+    compile group: 'org.slf4j', name: 'slf4j-api', version: SLF4J_VER
+
+    // Test
+    testCompile group: 'org.testng', name: 'testng', version: '7.3.0'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '3.5.13'
+}
+
+test {
+    useTestNG() {
+        useDefaultListeners = true
+    }
+    reports.html.enabled = false
 }
 
 jar {

@@ -59,7 +59,7 @@ public class AddVacancyURL implements ICommandHandler {
         return msg.getText();
     }
 
-    private String getVacancyId(Message msg) throws Exception {
+    String getVacancyId(Message msg) throws Exception {
         String url = getVacancyURL(msg);
         Matcher matcher = Pattern.compile("\\d+").matcher(url);
         if (matcher.find()) {
@@ -70,7 +70,7 @@ public class AddVacancyURL implements ICommandHandler {
 
     private GoogleSheetsService getSheetsService() throws GoogleRequestException, GoogleConnectionException {
         if (sheetsService == null) {
-            sheetsService = new GoogleSheetsService(spreadsheetId);
+            sheetsService = GoogleSheetsService.createService(spreadsheetId);
         }
         return sheetsService;
     }

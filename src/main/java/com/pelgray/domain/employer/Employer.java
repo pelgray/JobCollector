@@ -13,6 +13,11 @@ public class Employer {
      */
     String url;
 
+    public Employer(String name, String url) {
+        this.name = name;
+        this.url = url;
+    }
+
     @Override
     public String toString() {
         return String.format("=ГИПЕРССЫЛКА(\"%s\";\"%s\")", url, name);
