@@ -1,5 +1,7 @@
 package com.pelgray.domain;
 
+import com.google.api.services.sheets.v4.model.CellData;
+import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.pelgray.domain.employer.Employer;
 import com.pelgray.domain.requirements.KeySkill;
 import org.testng.Assert;
@@ -10,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class VacancyTest {
     private Vacancy vacancy;
@@ -27,14 +31,18 @@ public class VacancyTest {
     @Test(description = "Получение списка значений полей объекта Vacancy")
     public void testGetFieldsDataListWithFieldsParams() throws ReflectiveOperationException {
         List<String> orderedFields = Arrays.asList("", "name", "employer", "alternate_url");
-        List<Object> expectedList = Arrays.asList("", vacancy.name, vacancy.employer.toString(), "-");
+        List<CellData> expectedList = Stream.of(null, new ExtendedValue().setStringValue(vacancy.name),
+                new ExtendedValue().setFormulaValue(vacancy.employer.toString()), null)
+                .map(t -> new CellData().setUserEnteredValue(t)).collect(Collectors.toList());
         Assert.assertEquals(vacancy.getFieldsDataList(orderedFields), expectedList, "Некорректный вывод значений полей");
     }
 
     @Test(description = "Получение списка значений полей-списков объекта Vacancy")
     public void testGetFieldsDataListWithListParams() throws ReflectiveOperationException {
         List<String> orderedFields = Arrays.asList("key_skills", "specialization");
-        List<Object> expectedList = Arrays.asList("skill1, skill2, skill3", "-");
+        List<CellData> expectedList = Stream.of("skill1, skill2, skill3", "-")
+                .map(t -> new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(t)))
+                .collect(Collectors.toList());
         Assert.assertEquals(vacancy.getFieldsDataList(orderedFields), expectedList, "Некорректный вывод значений списков");
     }
 

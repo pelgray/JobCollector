@@ -1,5 +1,9 @@
 package com.pelgray.domain;
 
+import com.google.api.services.sheets.v4.model.BooleanCondition;
+import com.google.api.services.sheets.v4.model.CellData;
+import com.google.api.services.sheets.v4.model.DataValidationRule;
+import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.pelgray.domain.conditions.Employment;
 import com.pelgray.domain.conditions.Salary;
 import com.pelgray.domain.conditions.Schedule;
@@ -19,7 +23,7 @@ public class Vacancy {
     /**
      * Класс-идентификатор вакансии (поле со ссылкой на вакансию)
      */
-    @SheetColumn(name = "Идентификатор")
+    @SheetColumn(name = "Идентификатор", type = "formulaValue")
     Identifier identifier = new Identifier();
 
     /**
@@ -30,61 +34,61 @@ public class Vacancy {
     /**
      * Короткое представление работодателя
      */
-    @SheetColumn(name = "Компания")
+    @SheetColumn(name = "Компания", type = "formulaValue")
     Employer employer;
 
     /**
      * Название вакансии
      */
-    @SheetColumn(name = "Название")
+    @SheetColumn(name = "Название", type = "stringValue")
     String name;
 
     /**
      * Оклад
      */
-    @SheetColumn(name = "Оклад")
+    @SheetColumn(name = "Оклад", type = "stringValue")
     Salary salary;
 
     /**
      * Требуемый опыт работы
      */
-    @SheetColumn(name = "Требуемый опыт")
+    @SheetColumn(name = "Требуемый опыт", type = "stringValue")
     Experience experience;
 
     /**
      * Ключевые навыки
      */
-    @SheetColumn(name = "Ключевые навыки")
+    @SheetColumn(name = "Ключевые навыки", type = "stringValue")
     List<KeySkill> key_skills;
 
     /**
      * Адрес вакансии
      */
-    @SheetColumn(name = "Адрес")
+    @SheetColumn(name = "Адрес", type = "stringValue")
     Address address;
 
     /**
      * График работы
      */
-    @SheetColumn(name = "График работы")
+    @SheetColumn(name = "График работы", type = "stringValue")
     Schedule schedule;
 
     /**
      * Тип занятости
      */
-    @SheetColumn(name = "Тип занятости")
+    @SheetColumn(name = "Тип занятости", type = "stringValue")
     Employment employment;
 
     /**
      * Специализации
      */
-    @SheetColumn(name = "Специализации")
+    @SheetColumn(name = "Специализации", type = "stringValue")
     List<Specialization> specialization;
 
     /**
      * В архиве
      */
-    @SheetColumn(name = "В архиве")
+    @SheetColumn(name = "В архиве", type = "boolValue", checkBox = true)
     boolean archived;
 
     /**
@@ -133,26 +137,42 @@ public class Vacancy {
      * @return параметры вакансии, соответствующие полученному списку полей
      * @throws ReflectiveOperationException возникает, если нужного поля не существует, либо оно недоступно
      */
-    public List<Object> getFieldsDataList(List<String> orderedFields) throws ReflectiveOperationException {
-        List<Object> result = new ArrayList<>(orderedFields.size());
+    public List<CellData> getFieldsDataList(List<String> orderedFields) throws ReflectiveOperationException {
+        List<CellData> result = new ArrayList<>(orderedFields.size());
         for (String fieldName : orderedFields) {
             try {
-                if (fieldName.isEmpty()) { // Избегаем зануленных пользовательских полей
-                    result.add("");
+                // Избегаем зануленных пользовательских полей и полей, не помеченных аннотацией SheetColumn
+                if (fieldName.isEmpty() ||
+                        !this.getClass().getDeclaredField(fieldName).isAnnotationPresent(SheetColumn.class)) {
+                    result.add(new CellData().setUserEnteredValue(null));
                     continue;
                 }
                 Object fieldValue = this.getClass().getDeclaredField(fieldName).get(this);
-                String tmp = "-";   // Если данных нет
-                if (fieldValue != null && !fieldValue.toString().isEmpty()) {
-                    // Необходимо получить значение поля, если это не список,
-                    // и список значений, если сам список не пуст
-                    if (!(fieldValue instanceof List)) {
-                        tmp = fieldValue.toString();
-                    } else if (!((List<?>) fieldValue).isEmpty()) {
-                        tmp = ((List<?>) fieldValue).stream().map(Object::toString).collect(Collectors.joining(", "));
-                    }
+                SheetColumn sheetColumn = this.getClass().getDeclaredField(fieldName).getAnnotation(SheetColumn.class);
+                CellData cell = new CellData();
+                switch (sheetColumn.type()) {
+                    case "formulaValue":
+                    case "stringValue":
+                        String tmp = "-";   // Если данных нет
+                        if (fieldValue != null && !fieldValue.toString().isEmpty()) {
+                            // Необходимо получить значение поля, если это не список,
+                            // и список значений, если сам список не пуст
+                            if (!(fieldValue instanceof List)) {
+                                tmp = fieldValue.toString();
+                            } else if (!((List<?>) fieldValue).isEmpty()) {
+                                tmp = ((List<?>) fieldValue).stream().map(Object::toString).collect(Collectors.joining(", "));
+                            }
+                        }
+                        fieldValue = tmp;
+                        break;
+                    case "boolValue":
+                        if (sheetColumn.checkBox()) {
+                            cell.setDataValidation(new DataValidationRule().setCondition(
+                                    new BooleanCondition().setType("BOOLEAN")));
+                        }
+                        break;
                 }
-                result.add(tmp);
+                result.add(cell.setUserEnteredValue(new ExtendedValue().set(sheetColumn.type(), fieldValue)));
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new ReflectiveOperationException("Ошибка при обращении к полям класса Vacancy", e);
             }
