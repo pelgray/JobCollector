@@ -12,6 +12,11 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
+import com.google.api.services.sheets.v4.model.AppendCellsRequest;
+import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
+import com.google.api.services.sheets.v4.model.CellData;
+import com.google.api.services.sheets.v4.model.Request;
+import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.pelgray.domain.SheetColumn;
 import com.pelgray.domain.Vacancy;
@@ -77,9 +82,9 @@ public class GoogleSheetsService {
      */
     public void addVacancyOnNewLine(Vacancy vac)
             throws GoogleConnectionException, GoogleRequestException, ReflectiveOperationException {
-        List<Object> vacancyInfo = vac.getFieldsDataList(getOrderedFields());
-        int updatedCells = appendData(Collections.singletonList(vacancyInfo), "A1");
-        LOG.debug("{} ячеек о вакансии добавлено.", updatedCells);
+        List<CellData> vacancyInfo = vac.getFieldsDataList(getOrderedFields());
+        batchAppendData(vacancyInfo);
+        LOG.debug("Информация о вакансии добавлена.");
     }
 
     /**
@@ -157,6 +162,23 @@ public class GoogleSheetsService {
             }
         }
         return result;
+    }
+
+
+    /**
+     * Добавляет данные на первую свободную строку таблицы
+     *
+     * @param values данные с форматированием для добавления их в одну строку
+     */
+    void batchAppendData(List<CellData> values)
+            throws GoogleConnectionException, GoogleRequestException {
+        try {
+            List<Request> requests = Collections.singletonList(new Request().setAppendCells(new AppendCellsRequest()
+                    .setRows(Collections.singletonList(new RowData().setValues(values))).setFields("*")));
+            getSheets().batchUpdate(spreadsheetId, new BatchUpdateSpreadsheetRequest().setRequests(requests)).execute();
+        } catch (IOException e) {
+            throw new GoogleRequestException(e);
+        }
     }
 
     /**
