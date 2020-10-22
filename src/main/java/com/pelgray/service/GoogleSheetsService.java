@@ -14,7 +14,10 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.AppendCellsRequest;
 import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
+import com.google.api.services.sheets.v4.model.BooleanCondition;
 import com.google.api.services.sheets.v4.model.CellData;
+import com.google.api.services.sheets.v4.model.DataValidationRule;
+import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.google.api.services.sheets.v4.model.Request;
 import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.ValueRange;
@@ -31,13 +34,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GoogleSheetsService {
@@ -53,7 +55,8 @@ public class GoogleSheetsService {
         this.spreadsheetId = spreadsheetId;
     }
 
-    public static GoogleSheetsService createService(String spreadsheetId) throws GoogleRequestException, GoogleConnectionException {
+    public static GoogleSheetsService createService(String spreadsheetId)
+            throws GoogleRequestException, GoogleConnectionException {
         GoogleSheetsService result = new GoogleSheetsService(spreadsheetId);
         initToken();
         result.updateHeaders();
@@ -78,11 +81,44 @@ public class GoogleSheetsService {
      * Добавляет информацию о вакансии на первую пустую строку
      *
      * @param vac информация о вакансии
-     * @throws ReflectiveOperationException может возникнуть при обращении к полям класса Vacancy
      */
-    public void addVacancyOnNewLine(Vacancy vac)
-            throws GoogleConnectionException, GoogleRequestException, ReflectiveOperationException {
-        List<CellData> vacancyInfo = vac.getFieldsDataList(getOrderedFields());
+    public void addVacancyOnNewLine(Vacancy vac) throws GoogleConnectionException, GoogleRequestException {
+        List<String> headers = getHeaders();
+        List<CellData> vacancyInfo = new ArrayList<>(Collections.nCopies(headers.size(), null));
+        Map<SheetColumn, Object> columnValueMap = vac.getSheetColumnFieldDataMap();
+        for (SheetColumn column : columnValueMap.keySet()) {
+            if (!headers.contains(column.name())) {
+                continue;
+            }
+            CellData cell = new CellData();
+            Object fieldValue = columnValueMap.get(column);
+            switch (column.type()) {
+                case FORMULA:
+                case STRING:
+                    if (fieldValue != null) {
+                        if (!(fieldValue instanceof List)) {
+                            fieldValue = fieldValue.toString();
+                        } else {
+                            fieldValue = ((List<?>) fieldValue).stream().map(Object::toString)
+                                    .collect(Collectors.joining(", "));
+                        }
+                    }
+                    break;
+                case BOOLEAN:
+                    cell.setDataValidation(new DataValidationRule().setCondition(
+                            new BooleanCondition().setType("BOOLEAN")));
+                    break;
+                default: // Ничего не делаем
+                    break;
+            }
+            vacancyInfo.set(headers.indexOf(column.name()),
+                    cell.setUserEnteredValue(new ExtendedValue().set(column.type().getTypeName(), fieldValue)));
+        }
+        // Если были созданы столбцы пользователем, то в списке останутся null элементы,
+        // которые надо заменить на пустые объекты
+        while (vacancyInfo.contains(null)) {
+            vacancyInfo.set(vacancyInfo.indexOf(null), new CellData());
+        }
         batchAppendData(vacancyInfo);
         LOG.debug("Информация о вакансии добавлена.");
     }
@@ -111,18 +147,18 @@ public class GoogleSheetsService {
      * Создает/дополняет заголовки в таблице в соответствии с указанием аннотации {@link SheetColumn}
      */
     public void updateHeaders() throws GoogleConnectionException, GoogleRequestException {
-        List<Object> headers = new ArrayList<>();
-        // Получаем все указанные в таблице поля класса Vacancy
-        List<String> orderedFields = getOrderedFields();
-        // С помощью аннотаций и полученного списка полей собираем список заголовков, которые надо добавить в таблицу
-        for (Field field : Vacancy.class.getDeclaredFields()) {
-            if (field.isAnnotationPresent(SheetColumn.class) && !orderedFields.contains(field.getName())) {
-                headers.add(field.getAnnotation(SheetColumn.class).name());
+        List<Object> newHeaders = new ArrayList<>();
+        List<String> actualHeaders = getHeaders();
+        // Собираем список заголовков, которые надо добавить в таблицу
+        Vacancy.getSheetColumnList().forEach(column -> {
+            if (!actualHeaders.contains(column.name())) {
+                newHeaders.add(column.name());
             }
-        }
-        if (!headers.isEmpty()) {
-            String range = String.format("%s1", (char) ('A' + orderedFields.size()));
-            int updatedCells = appendData(Collections.singletonList(headers), range);
+        });
+
+        if (!newHeaders.isEmpty()) {
+            String range = String.format("%s1", (char) ('A' + actualHeaders.size()));
+            int updatedCells = appendData(Collections.singletonList(newHeaders), range);
             LOG.debug("В заголовок добавлено {} ячеек.", updatedCells);
         } else {
             LOG.debug("Заголовки актуальны.");
@@ -130,43 +166,14 @@ public class GoogleSheetsService {
     }
 
     /**
-     * Получение списка названий полей из класса {@link Vacancy} в той последовательности, в которой они расположены в
-     * таблице
-     * <p>
-     * Если в таблице есть столбцы, созданные пользователем (их нет в классе {@link Vacancy}), то вместо названия поля
-     * возвращается пустая строка
+     * Получение списка актуальных заголовков в таблице
      */
-    List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
-        // Получаем актуальные заголовки таблицы
+    List<String> getHeaders() throws GoogleRequestException, GoogleConnectionException {
         List<List<Object>> values = getData("1:1");
         if (values == null || values.isEmpty()) {
             return new ArrayList<>();
         }
-        List<String> result = values.get(0).stream().map(String::valueOf).collect(Collectors.toList());
-        BitSet updatedIndexes = new BitSet(result.size());
-        // Через аннотации выясняем названия полей класса Vacancy, соответствующих заголовкам
-        for (Field field : Vacancy.class.getDeclaredFields()) {
-            if (!field.isAnnotationPresent(SheetColumn.class)) {
-                continue;
-            }
-            SheetColumn sheetColumn = field.getAnnotation(SheetColumn.class);
-            if (result.contains(sheetColumn.name())) {
-                int ind = result.indexOf(sheetColumn.name());
-                result.set(ind, field.getName());
-                updatedIndexes.set(ind);
-            }
-        }
-        // В таком случае были обработаны не все значения, т.е. есть столбцы, созданные пользователем, названия которых
-        // надо заменить на пустую строку, чтобы во время обработки по такому названию не производился поиск
-        if (updatedIndexes.cardinality() != result.size()) {
-            // Зануляем такие поля во избежание ошибок
-            int fromIndex = updatedIndexes.nextClearBit(0);
-            while (fromIndex < result.size()) {
-                result.set(fromIndex, "");
-                fromIndex = updatedIndexes.nextClearBit(fromIndex + 1);
-            }
-        }
-        return result;
+        return values.get(0).stream().map(String::valueOf).collect(Collectors.toList());
     }
 
     /**

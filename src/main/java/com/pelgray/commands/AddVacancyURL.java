@@ -68,7 +68,8 @@ public class AddVacancyURL implements ICommandHandler {
         throw new Exception(String.format("Не удалось получить идентификатор вакансии из адреса '%s'", url));
     }
 
-    private GoogleSheetsService getSheetsService() throws GoogleRequestException, GoogleConnectionException {
+    private GoogleSheetsService getSheetsService()
+            throws GoogleRequestException, GoogleConnectionException, ReflectiveOperationException {
         if (sheetsService == null) {
             sheetsService = GoogleSheetsService.createService(spreadsheetId);
         }

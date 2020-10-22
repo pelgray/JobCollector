@@ -21,6 +21,14 @@ public class Salary {
      */
     String currency;
 
+    public Salary() {
+    }
+
+    public Salary(int from, int to) {
+        this.from = from;
+        this.to = to;
+    }
+
     @Override
     public String toString() {
         if (from == 0 && to == 0) {

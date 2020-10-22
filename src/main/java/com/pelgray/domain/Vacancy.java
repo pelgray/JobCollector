@@ -1,9 +1,5 @@
 package com.pelgray.domain;
 
-import com.google.api.services.sheets.v4.model.BooleanCondition;
-import com.google.api.services.sheets.v4.model.CellData;
-import com.google.api.services.sheets.v4.model.DataValidationRule;
-import com.google.api.services.sheets.v4.model.ExtendedValue;
 import com.pelgray.domain.conditions.Employment;
 import com.pelgray.domain.conditions.Salary;
 import com.pelgray.domain.conditions.Schedule;
@@ -14,9 +10,12 @@ import com.pelgray.domain.location.Area;
 import com.pelgray.domain.requirements.Experience;
 import com.pelgray.domain.requirements.KeySkill;
 import com.pelgray.domain.requirements.Test;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Vacancy {
@@ -133,53 +132,31 @@ public class Vacancy {
 
 
     /**
-     * Метод преобразования списка названий полей класса {@link Vacancy} в список значений этих полей для добавления
-     * новой строки в таблице
-     * <br>
-     * Если в {@code orderedFields} есть пустые значения (то есть, в таблице присутствуют столбцы, созданные
-     * пользователем) или не аннотированные {@link SheetColumn} поля, то им присваивается {@code null}
-     *
-     * @param orderedFields список полей класса в той же последовательности, как они указаны в таблице
-     * @return параметры вакансии, соответствующие полученному списку полей
-     * @throws ReflectiveOperationException возникает, если нужного поля не существует, либо оно недоступно
+     * @return словарь, в котором ключами являются существующие аннотации {@link SheetColumn} на полях класса
+     * {@link Vacancy}, а значениями - значения этих аннотированных полей
      */
-    public List<CellData> getFieldsDataList(List<String> orderedFields) throws ReflectiveOperationException {
-        List<CellData> result = new ArrayList<>(orderedFields.size());
-        for (String fieldName : orderedFields) {
-            try {
-                CellData cell = new CellData();
-                // Пропускаем столбцы, созданные пользователем
-                if (fieldName.isEmpty() ||
-                        !this.getClass().getDeclaredField(fieldName).isAnnotationPresent(SheetColumn.class)) {
-                    result.add(cell);
-                    continue;
-                }
-                Object fieldValue = this.getClass().getDeclaredField(fieldName).get(this);
-                SheetColumn sheetColumn = this.getClass().getDeclaredField(fieldName).getAnnotation(SheetColumn.class);
-                switch (sheetColumn.type()) {
-                    case FORMULA:
-                    case STRING:
-                        if (fieldValue != null) {
-                            if (!(fieldValue instanceof List)) {
-                                fieldValue = fieldValue.toString();
-                            } else {
-                                fieldValue = ((List<?>) fieldValue).stream().map(Object::toString)
-                                        .collect(Collectors.joining(", "));
-                            }
-                        }
-                        break;
-                    case BOOLEAN:
-                        cell.setDataValidation(new DataValidationRule().setCondition(
-                                new BooleanCondition().setType("BOOLEAN")));
-                        break;
-                    default: // Ничего не делаем
-                        break;
-                }
-                result.add(cell.setUserEnteredValue(new ExtendedValue().set(sheetColumn.type().getTypeName(), fieldValue)));
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new ReflectiveOperationException("Ошибка при обращении к полям класса Vacancy", e);
-            }
-        }
+    public Map<SheetColumn, Object> getSheetColumnFieldDataMap() { // TODO test
+        Map<SheetColumn, Object> result = new HashMap<>();
+        Arrays.stream(Vacancy.class.getDeclaredFields()).filter(field -> field.isAnnotationPresent(SheetColumn.class))
+                .forEachOrdered(field -> {
+                    try {
+                        result.put(field.getAnnotation(SheetColumn.class), field.get(this));
+                    } catch (IllegalAccessException e) {
+                        LoggerFactory.getLogger(Vacancy.class).warn("Ошибка при обращении к полям класса " +
+                                Vacancy.class.getName(), e);
+                        result.put(field.getAnnotation(SheetColumn.class), null);
+                    }
+                });
         return result;
+    }
+
+    /**
+     * @return список из аннотаций {@link SheetColumn} на полях класса {@link Vacancy}
+     */
+    public static List<SheetColumn> getSheetColumnList() { // TODO test
+        return Arrays.stream(Vacancy.class.getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(SheetColumn.class))
+                .map(field -> field.getAnnotation(SheetColumn.class))
+                .collect(Collectors.toList());
     }
 }
