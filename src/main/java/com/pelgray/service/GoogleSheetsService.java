@@ -130,7 +130,11 @@ public class GoogleSheetsService {
     }
 
     /**
-     * Получение списка полей, соответствующих заголовкам в порядке, указанном в таблице
+     * Получение списка названий полей из класса {@link Vacancy} в той последовательности, в которой они расположены в
+     * таблице
+     * <p>
+     * Если в таблице есть столбцы, созданные пользователем (их нет в классе {@link Vacancy}), то вместо названия поля
+     * возвращается пустая строка
      */
     List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
         // Получаем актуальные заголовки таблицы
@@ -152,7 +156,8 @@ public class GoogleSheetsService {
                 updatedIndexes.set(ind);
             }
         }
-        // Если количество найденных полей в Vacancy не равно указанным в таблице
+        // В таком случае были обработаны не все значения, т.е. есть столбцы, созданные пользователем, названия которых
+        // надо заменить на пустую строку, чтобы во время обработки по такому названию не производился поиск
         if (updatedIndexes.cardinality() != result.size()) {
             // Зануляем такие поля во избежание ошибок
             int fromIndex = updatedIndexes.nextClearBit(0);
@@ -164,18 +169,20 @@ public class GoogleSheetsService {
         return result;
     }
 
-
     /**
      * Добавляет данные на первую свободную строку таблицы
      *
      * @param values данные с форматированием для добавления их в одну строку
      */
-    void batchAppendData(List<CellData> values)
-            throws GoogleConnectionException, GoogleRequestException {
+    void batchAppendData(List<CellData> values) throws GoogleConnectionException, GoogleRequestException {
         try {
-            List<Request> requests = Collections.singletonList(new Request().setAppendCells(new AppendCellsRequest()
-                    .setRows(Collections.singletonList(new RowData().setValues(values))).setFields("*")));
-            getSheets().batchUpdate(spreadsheetId, new BatchUpdateSpreadsheetRequest().setRequests(requests)).execute();
+            AppendCellsRequest appendRequest = new AppendCellsRequest()
+                    .setRows(Collections.singletonList(new RowData().setValues(values)))
+                    .setFields("*");
+
+            BatchUpdateSpreadsheetRequest spreadsheetRequest = new BatchUpdateSpreadsheetRequest()
+                    .setRequests(Collections.singletonList(new Request().setAppendCells(appendRequest)));
+            getSheets().batchUpdate(spreadsheetId, spreadsheetRequest).execute();
         } catch (IOException e) {
             throw new GoogleRequestException(e);
         }

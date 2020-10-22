@@ -18,14 +18,8 @@ public @interface SheetColumn {
 
     /**
      * Тип значения в таблице.
-     * Возможные значения: `boolValue`, `errorValue`, `formulaValue`, `numberValue`, `stringValue`.
-     * <p>
+     * <br>
      * См. подробнее {@link com.google.api.services.sheets.v4.model.ExtendedValue}
      */
-    String type();
-
-    /**
-     * Применить для поля функцию "Вставить флажок". Для всех типов, кроме {@code boolean}, игнорируется.
-     */
-    boolean checkBox() default false;
+    SheetColumnType type();
 }

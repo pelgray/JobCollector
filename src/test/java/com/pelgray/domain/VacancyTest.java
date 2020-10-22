@@ -30,20 +30,29 @@ public class VacancyTest {
 
     @Test(description = "Получение списка значений полей объекта Vacancy")
     public void testGetFieldsDataListWithFieldsParams() throws ReflectiveOperationException {
-        List<String> orderedFields = Arrays.asList("", "name", "employer", "alternate_url");
-        List<CellData> expectedList = Stream.of(null, new ExtendedValue().setStringValue(vacancy.name),
-                new ExtendedValue().setFormulaValue(vacancy.employer.toString()), null)
+        List<String> actualFieldNames = Arrays.asList("", "name", "employer", "alternate_url");
+
+        List<ExtendedValue> expectedValues = Arrays.asList(null,
+                new ExtendedValue().setStringValue(vacancy.name),
+                new ExtendedValue().setFormulaValue(vacancy.employer.toString()),
+                null);
+        List<CellData> expectedList = expectedValues.stream()
                 .map(t -> new CellData().setUserEnteredValue(t)).collect(Collectors.toList());
-        Assert.assertEquals(vacancy.getFieldsDataList(orderedFields), expectedList, "Некорректный вывод значений полей");
+
+        Assert.assertEquals(vacancy.getFieldsDataList(actualFieldNames), expectedList,
+                "Некорректный вывод значений полей");
     }
 
     @Test(description = "Получение списка значений полей-списков объекта Vacancy")
     public void testGetFieldsDataListWithListParams() throws ReflectiveOperationException {
-        List<String> orderedFields = Arrays.asList("key_skills", "specialization");
-        List<CellData> expectedList = Stream.of("skill1, skill2, skill3", "-")
+        List<String> actualFieldNames = Arrays.asList("key_skills", "specialization");
+
+        List<CellData> expectedList = Stream.of("skill1, skill2, skill3", "")
                 .map(t -> new CellData().setUserEnteredValue(new ExtendedValue().setStringValue(t)))
                 .collect(Collectors.toList());
-        Assert.assertEquals(vacancy.getFieldsDataList(orderedFields), expectedList, "Некорректный вывод значений списков");
+
+        Assert.assertEquals(vacancy.getFieldsDataList(actualFieldNames), expectedList,
+                "Некорректный вывод значений списков");
     }
 
     @Test(description = "Выброс исключения при попытке обратиться к несуществующему полю класса Vacancy",

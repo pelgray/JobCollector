@@ -23,7 +23,7 @@ public class Vacancy {
     /**
      * Класс-идентификатор вакансии (поле со ссылкой на вакансию)
      */
-    @SheetColumn(name = "Идентификатор", type = "formulaValue")
+    @SheetColumn(name = "Идентификатор", type = SheetColumnType.FORMULA)
     Identifier identifier = new Identifier();
 
     /**
@@ -34,61 +34,61 @@ public class Vacancy {
     /**
      * Короткое представление работодателя
      */
-    @SheetColumn(name = "Компания", type = "formulaValue")
+    @SheetColumn(name = "Компания", type = SheetColumnType.FORMULA)
     Employer employer;
 
     /**
      * Название вакансии
      */
-    @SheetColumn(name = "Название", type = "stringValue")
+    @SheetColumn(name = "Название", type = SheetColumnType.STRING)
     String name;
 
     /**
      * Оклад
      */
-    @SheetColumn(name = "Оклад", type = "stringValue")
+    @SheetColumn(name = "Оклад", type = SheetColumnType.STRING)
     Salary salary;
 
     /**
      * Требуемый опыт работы
      */
-    @SheetColumn(name = "Требуемый опыт", type = "stringValue")
+    @SheetColumn(name = "Требуемый опыт", type = SheetColumnType.STRING)
     Experience experience;
 
     /**
      * Ключевые навыки
      */
-    @SheetColumn(name = "Ключевые навыки", type = "stringValue")
+    @SheetColumn(name = "Ключевые навыки", type = SheetColumnType.STRING)
     List<KeySkill> key_skills;
 
     /**
      * Адрес вакансии
      */
-    @SheetColumn(name = "Адрес", type = "stringValue")
+    @SheetColumn(name = "Адрес", type = SheetColumnType.STRING)
     Address address;
 
     /**
      * График работы
      */
-    @SheetColumn(name = "График работы", type = "stringValue")
+    @SheetColumn(name = "График работы", type = SheetColumnType.STRING)
     Schedule schedule;
 
     /**
      * Тип занятости
      */
-    @SheetColumn(name = "Тип занятости", type = "stringValue")
+    @SheetColumn(name = "Тип занятости", type = SheetColumnType.STRING)
     Employment employment;
 
     /**
      * Специализации
      */
-    @SheetColumn(name = "Специализации", type = "stringValue")
+    @SheetColumn(name = "Специализации", type = SheetColumnType.STRING)
     List<Specialization> specialization;
 
     /**
      * В архиве
      */
-    @SheetColumn(name = "В архиве", type = "boolValue", checkBox = true)
+    @SheetColumn(name = "В архиве", type = SheetColumnType.BOOLEAN)
     boolean archived;
 
     /**
@@ -133,6 +133,12 @@ public class Vacancy {
 
 
     /**
+     * Метод преобразования списка названий полей класса {@link Vacancy} в список значений этих полей для добавления
+     * новой строки в таблице
+     * <br>
+     * Если в {@code orderedFields} есть пустые значения (то есть, в таблице присутствуют столбцы, созданные
+     * пользователем) или не аннотированные {@link SheetColumn} поля, то им присваивается {@code null}
+     *
      * @param orderedFields список полей класса в той же последовательности, как они указаны в таблице
      * @return параметры вакансии, соответствующие полученному списку полей
      * @throws ReflectiveOperationException возникает, если нужного поля не существует, либо оно недоступно
@@ -141,38 +147,35 @@ public class Vacancy {
         List<CellData> result = new ArrayList<>(orderedFields.size());
         for (String fieldName : orderedFields) {
             try {
-                // Избегаем зануленных пользовательских полей и полей, не помеченных аннотацией SheetColumn
+                CellData cell = new CellData();
+                // Пропускаем столбцы, созданные пользователем
                 if (fieldName.isEmpty() ||
                         !this.getClass().getDeclaredField(fieldName).isAnnotationPresent(SheetColumn.class)) {
-                    result.add(new CellData().setUserEnteredValue(null));
+                    result.add(cell);
                     continue;
                 }
                 Object fieldValue = this.getClass().getDeclaredField(fieldName).get(this);
                 SheetColumn sheetColumn = this.getClass().getDeclaredField(fieldName).getAnnotation(SheetColumn.class);
-                CellData cell = new CellData();
                 switch (sheetColumn.type()) {
-                    case "formulaValue":
-                    case "stringValue":
-                        String tmp = "-";   // Если данных нет
-                        if (fieldValue != null && !fieldValue.toString().isEmpty()) {
-                            // Необходимо получить значение поля, если это не список,
-                            // и список значений, если сам список не пуст
+                    case FORMULA:
+                    case STRING:
+                        if (fieldValue != null) {
                             if (!(fieldValue instanceof List)) {
-                                tmp = fieldValue.toString();
-                            } else if (!((List<?>) fieldValue).isEmpty()) {
-                                tmp = ((List<?>) fieldValue).stream().map(Object::toString).collect(Collectors.joining(", "));
+                                fieldValue = fieldValue.toString();
+                            } else {
+                                fieldValue = ((List<?>) fieldValue).stream().map(Object::toString)
+                                        .collect(Collectors.joining(", "));
                             }
                         }
-                        fieldValue = tmp;
                         break;
-                    case "boolValue":
-                        if (sheetColumn.checkBox()) {
-                            cell.setDataValidation(new DataValidationRule().setCondition(
-                                    new BooleanCondition().setType("BOOLEAN")));
-                        }
+                    case BOOLEAN:
+                        cell.setDataValidation(new DataValidationRule().setCondition(
+                                new BooleanCondition().setType("BOOLEAN")));
+                        break;
+                    default: // Ничего не делаем
                         break;
                 }
-                result.add(cell.setUserEnteredValue(new ExtendedValue().set(sheetColumn.type(), fieldValue)));
+                result.add(cell.setUserEnteredValue(new ExtendedValue().set(sheetColumn.type().getTypeName(), fieldValue)));
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 throw new ReflectiveOperationException("Ошибка при обращении к полям класса Vacancy", e);
             }
