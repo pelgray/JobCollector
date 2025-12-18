@@ -19,14 +19,17 @@ import java.util.regex.Pattern;
 @Component
 public class AddVacancyURL implements ICommandHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AddVacancyURL.class);
+
     @Value("${gSheets.SpreadsheetId}")
     private String spreadsheetId;
+
     private GoogleSheetsService sheetsService;
+
     protected final String DOMAIN = HhApiService.DOMAIN;
 
     @Override
     public SendMessage handle(Message msg) {
-        SendMessage result = new SendMessage(msg.getChatId(), "Добавлено").setReplyToMessageId(msg.getMessageId());
+        SendMessage.SendMessageBuilder result = getSendMessageBuilder(msg).text("Добавлено");
         try {
             String vacancyId = getVacancyId(msg);
             if (getSheetsService().isValueExist(vacancyId, 1)) {
@@ -35,15 +38,15 @@ public class AddVacancyURL implements ICommandHandler {
             Vacancy vacancy = HhApiService.getVacancy(vacancyId);
             getSheetsService().addVacancyOnNewLine(vacancy);
             LOG.info("Добавлена вакансия для пользователя {}", msg.getFrom().getUserName());
-            return result;
         } catch (DuplicateVacancyException e) {
             LOG.info("Дублирование вакансии для пользователя {}", msg.getFrom().getUserName());
-            return result.setText("Не добавлено.\n" + e.getMessage());
+            result.text("Не добавлено.\n" + e.getMessage());
         } catch (Exception e) {
             LOG.error(String.format("Неудачная попытка добавления вакансии (%s): %s",
                     msg.getFrom().getUserName(), e.getMessage()), e);
-            return result.setText("Произошла непредвиденная ошибка.\n" + e.getMessage());
+            result.text("Произошла непредвиденная ошибка.\n" + e.getMessage());
         }
+        return result.build();
     }
 
     @Override

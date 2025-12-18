@@ -11,7 +11,7 @@ public class DefaultHandler implements ICommandHandler {
     @Override
     public SendMessage handle(Message msg) {
         LOG.info("Сгенерировано сообщение по умолчанию для пользователя {}", msg.getFrom().getUserName());
-        return new SendMessage(msg.getChatId(), "Не понял").setReplyToMessageId(msg.getMessageId());
+        return getSendMessageBuilder(msg).text("Не понял").build();
     }
 
     /**

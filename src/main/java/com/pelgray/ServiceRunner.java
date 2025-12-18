@@ -9,9 +9,9 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Configuration
 @PropertySource("file:/${app.props:${user.dir}}/config.properties")
@@ -21,17 +21,12 @@ public class ServiceRunner {
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
-        ApiContextInitializer.init();
         AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ServiceRunner.class);
         TelegramBotService tgBotService = context.getBean("telegramBotService", TelegramBotService.class);
-        if (tgBotService.parametersIsEmpty()) {
-            LOG.error("В файле \"config.properties\" одно или несколько параметров с префиксом \"tgBot\" пусты." +
-                    "\nСервис не может быть запущен.");
-            return;
-        }
+        tgBotService.checkInputParameters();
         try {
             GoogleSheetsService.initToken();
-            new TelegramBotsApi().registerBot(tgBotService);
+            new TelegramBotsApi(DefaultBotSession.class).registerBot(tgBotService);
         } catch (TelegramApiException e) {
             LOG.error("Ошибка при подключении к Telegram боту", e);
             throw e;
