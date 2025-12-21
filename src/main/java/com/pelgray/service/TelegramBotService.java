@@ -13,17 +13,25 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class TelegramBotService extends TelegramLongPollingBot {
     private static final Logger LOG = LoggerFactory.getLogger(TelegramBotService.class);
+
     @Value("${tgBot.Name}")
     private String botUsername;
-    @Value("${tgBot.Token}")
-    private String botToken;
+
+    private final String botToken;
+
     @Autowired
     private List<ICommandHandler> commands;
+
+    public TelegramBotService(@Value("${tgBot.Token}") String botToken) {
+        super(botToken);
+        this.botToken = botToken;
+    }
 
     /**
      * Метод возвращает имя бота, указанное при регистрации
@@ -33,16 +41,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
     @Override
     public String getBotUsername() {
         return botUsername;
-    }
-
-    /**
-     * Метод возвращает token бота для связи с сервером Telegram
-     *
-     * @return token для бота
-     */
-    @Override
-    public String getBotToken() {
-        return botToken;
     }
 
     /**
@@ -73,8 +71,18 @@ public class TelegramBotService extends TelegramLongPollingBot {
      *
      * @return {@code true}, если хотя бы один параметр не указан
      */
-    public boolean parametersIsEmpty() {
-        return (botUsername.isEmpty() || botToken.isEmpty());
+    public void checkInputParameters() throws Exception {
+        List<String> emptyParameters = new ArrayList<>(2);
+        if (botUsername.isEmpty()) {
+            emptyParameters.add("tgBot.Name");
+        }
+        if (botToken.isEmpty()) {
+            emptyParameters.add("tgBot.Token");
+        }
+        if (!emptyParameters.isEmpty()) {
+            throw new Exception("В файле \"config.properties\" не указаны следующие обязательные параметры:\n\t- " +
+                    String.join("\n\t- ", emptyParameters) + "\nСервис не может быть запущен.");
+        }
     }
 
     /**

@@ -8,10 +8,18 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
+import com.google.api.services.sheets.v4.model.AppendCellsRequest;
+import com.google.api.services.sheets.v4.model.BatchUpdateSpreadsheetRequest;
+import com.google.api.services.sheets.v4.model.BooleanCondition;
+import com.google.api.services.sheets.v4.model.CellData;
+import com.google.api.services.sheets.v4.model.DataValidationRule;
+import com.google.api.services.sheets.v4.model.ExtendedValue;
+import com.google.api.services.sheets.v4.model.Request;
+import com.google.api.services.sheets.v4.model.RowData;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import com.pelgray.domain.SheetColumn;
 import com.pelgray.domain.Vacancy;
@@ -26,13 +34,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GoogleSheetsService {
@@ -48,7 +55,8 @@ public class GoogleSheetsService {
         this.spreadsheetId = spreadsheetId;
     }
 
-    public static GoogleSheetsService createService(String spreadsheetId) throws GoogleRequestException, GoogleConnectionException {
+    public static GoogleSheetsService createService(String spreadsheetId)
+            throws GoogleRequestException, GoogleConnectionException {
         GoogleSheetsService result = new GoogleSheetsService(spreadsheetId);
         initToken();
         result.updateHeaders();
@@ -73,13 +81,46 @@ public class GoogleSheetsService {
      * Добавляет информацию о вакансии на первую пустую строку
      *
      * @param vac информация о вакансии
-     * @throws ReflectiveOperationException может возникнуть при обращении к полям класса Vacancy
      */
-    public void addVacancyOnNewLine(Vacancy vac)
-            throws GoogleConnectionException, GoogleRequestException, ReflectiveOperationException {
-        List<Object> vacancyInfo = vac.getFieldsDataList(getOrderedFields());
-        int updatedCells = appendData(Collections.singletonList(vacancyInfo), "A1");
-        LOG.debug("{} ячеек о вакансии добавлено.", updatedCells);
+    public void addVacancyOnNewLine(Vacancy vac) throws GoogleConnectionException, GoogleRequestException {
+        List<String> headers = getHeaders();
+        List<CellData> vacancyInfo = new ArrayList<>(Collections.nCopies(headers.size(), null));
+        Map<SheetColumn, Object> columnValueMap = vac.getSheetColumnFieldDataMap();
+        for (SheetColumn column : columnValueMap.keySet()) {
+            if (!headers.contains(column.name())) {
+                continue;
+            }
+            CellData cell = new CellData();
+            Object fieldValue = columnValueMap.get(column);
+            switch (column.type()) {
+                case FORMULA:
+                case STRING:
+                    if (fieldValue != null) {
+                        if (!(fieldValue instanceof List)) {
+                            fieldValue = fieldValue.toString();
+                        } else {
+                            fieldValue = ((List<?>) fieldValue).stream().map(Object::toString)
+                                    .collect(Collectors.joining(", "));
+                        }
+                    }
+                    break;
+                case BOOLEAN:
+                    cell.setDataValidation(new DataValidationRule().setCondition(
+                            new BooleanCondition().setType("BOOLEAN")));
+                    break;
+                default: // Ничего не делаем
+                    break;
+            }
+            vacancyInfo.set(headers.indexOf(column.name()),
+                    cell.setUserEnteredValue(new ExtendedValue().set(column.type().getTypeName(), fieldValue)));
+        }
+        // Если были созданы столбцы пользователем, то в списке останутся null элементы,
+        // которые надо заменить на пустые объекты
+        while (vacancyInfo.contains(null)) {
+            vacancyInfo.set(vacancyInfo.indexOf(null), new CellData());
+        }
+        batchAppendData(vacancyInfo);
+        LOG.debug("Информация о вакансии добавлена.");
     }
 
     /**
@@ -106,18 +147,18 @@ public class GoogleSheetsService {
      * Создает/дополняет заголовки в таблице в соответствии с указанием аннотации {@link SheetColumn}
      */
     public void updateHeaders() throws GoogleConnectionException, GoogleRequestException {
-        List<Object> headers = new ArrayList<>();
-        // Получаем все указанные в таблице поля класса Vacancy
-        List<String> orderedFields = getOrderedFields();
-        // С помощью аннотаций и полученного списка полей собираем список заголовков, которые надо добавить в таблицу
-        for (Field field : Vacancy.class.getDeclaredFields()) {
-            if (field.isAnnotationPresent(SheetColumn.class) && !orderedFields.contains(field.getName())) {
-                headers.add(field.getAnnotation(SheetColumn.class).name());
+        List<Object> newHeaders = new ArrayList<>();
+        List<String> actualHeaders = getHeaders();
+        // Собираем список заголовков, которые надо добавить в таблицу
+        Vacancy.getSheetColumnList().forEach(column -> {
+            if (!actualHeaders.contains(column.name())) {
+                newHeaders.add(column.name());
             }
-        }
-        if (!headers.isEmpty()) {
-            String range = String.format("%s1", (char) ('A' + orderedFields.size()));
-            int updatedCells = appendData(Collections.singletonList(headers), range);
+        });
+
+        if (!newHeaders.isEmpty()) {
+            String range = String.format("%s1", (char) ('A' + actualHeaders.size()));
+            int updatedCells = appendData(Collections.singletonList(newHeaders), range);
             LOG.debug("В заголовок добавлено {} ячеек.", updatedCells);
         } else {
             LOG.debug("Заголовки актуальны.");
@@ -125,38 +166,33 @@ public class GoogleSheetsService {
     }
 
     /**
-     * Получение списка полей, соответствующих заголовкам в порядке, указанном в таблице
+     * Получение списка актуальных заголовков в таблице
      */
-    List<String> getOrderedFields() throws GoogleRequestException, GoogleConnectionException {
-        // Получаем актуальные заголовки таблицы
+    List<String> getHeaders() throws GoogleRequestException, GoogleConnectionException {
         List<List<Object>> values = getData("1:1");
         if (values == null || values.isEmpty()) {
             return new ArrayList<>();
         }
-        List<String> result = values.get(0).stream().map(String::valueOf).collect(Collectors.toList());
-        BitSet updatedIndexes = new BitSet(result.size());
-        // Через аннотации выясняем названия полей класса Vacancy, соответствующих заголовкам
-        for (Field field : Vacancy.class.getDeclaredFields()) {
-            if (!field.isAnnotationPresent(SheetColumn.class)) {
-                continue;
-            }
-            SheetColumn sheetColumn = field.getAnnotation(SheetColumn.class);
-            if (result.contains(sheetColumn.name())) {
-                int ind = result.indexOf(sheetColumn.name());
-                result.set(ind, field.getName());
-                updatedIndexes.set(ind);
-            }
+        return values.get(0).stream().map(String::valueOf).collect(Collectors.toList());
+    }
+
+    /**
+     * Добавляет данные на первую свободную строку таблицы
+     *
+     * @param values данные с форматированием для добавления их в одну строку
+     */
+    void batchAppendData(List<CellData> values) throws GoogleConnectionException, GoogleRequestException {
+        try {
+            AppendCellsRequest appendRequest = new AppendCellsRequest()
+                    .setRows(Collections.singletonList(new RowData().setValues(values)))
+                    .setFields("*");
+
+            BatchUpdateSpreadsheetRequest spreadsheetRequest = new BatchUpdateSpreadsheetRequest()
+                    .setRequests(Collections.singletonList(new Request().setAppendCells(appendRequest)));
+            getSheets().batchUpdate(spreadsheetId, spreadsheetRequest).execute();
+        } catch (IOException e) {
+            throw new GoogleRequestException(e);
         }
-        // Если количество найденных полей в Vacancy не равно указанным в таблице
-        if (updatedIndexes.cardinality() != result.size()) {
-            // Зануляем такие поля во избежание ошибок
-            int fromIndex = updatedIndexes.nextClearBit(0);
-            while (fromIndex < result.size()) {
-                result.set(fromIndex, "");
-                fromIndex = updatedIndexes.nextClearBit(fromIndex + 1);
-            }
-        }
-        return result;
     }
 
     /**
@@ -205,7 +241,7 @@ public class GoogleSheetsService {
             try {
                 httpTransport = GoogleNetHttpTransport.newTrustedTransport();
                 sheetsGateway = new Sheets
-                        .Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
+                        .Builder(httpTransport, GsonFactory.getDefaultInstance(), credential)
                         .setApplicationName("JobCollector")
                         .build()
                         .spreadsheets();
@@ -231,7 +267,7 @@ public class GoogleSheetsService {
      */
     static Credential authorize() throws IOException, GeneralSecurityException {
         List<String> scopes = Collections.singletonList(SheetsScopes.SPREADSHEETS);
-        JsonFactory jsonFactory = JacksonFactory.getDefaultInstance();
+        JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
         String credentialFilePath = System.getProperty("app.secrets", "");
         GoogleClientSecrets clientSecrets;
         try {
@@ -243,7 +279,7 @@ public class GoogleSheetsService {
         }
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(), jsonFactory, clientSecrets, scopes)
-                .setDataStoreFactory(new FileDataStoreFactory(new File("tokens")))
+                .setDataStoreFactory(new FileDataStoreFactory(new File("google-tokens")))
                 .setAccessType("offline")
                 .build();
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();

@@ -11,5 +11,15 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface SheetColumn {
+    /**
+     * Имя заголовка в таблице.
+     */
     String name();
+
+    /**
+     * Тип значения в таблице.
+     * <br>
+     * См. подробнее {@link com.google.api.services.sheets.v4.model.ExtendedValue}
+     */
+    SheetColumnType type();
 }

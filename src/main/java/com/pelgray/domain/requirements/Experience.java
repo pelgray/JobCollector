@@ -13,6 +13,13 @@ public class Experience {
      */
     String name;
 
+    public Experience() {
+    }
+
+    public Experience(String name) {
+        this.name = name;
+    }
+
     @Override
     public String toString() {
         return name;

@@ -7,4 +7,11 @@ public interface ICommandHandler {
     SendMessage handle(Message msg);
 
     boolean accept(Message msg);
+
+    default SendMessage.SendMessageBuilder getSendMessageBuilder(Message msg) {
+        return SendMessage.builder()
+                .chatId(Long.toString(msg.getChatId()))
+                .replyToMessageId(msg.getMessageId());
+    }
+
 }

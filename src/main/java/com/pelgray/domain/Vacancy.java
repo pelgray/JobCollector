@@ -10,16 +10,19 @@ import com.pelgray.domain.location.Area;
 import com.pelgray.domain.requirements.Experience;
 import com.pelgray.domain.requirements.KeySkill;
 import com.pelgray.domain.requirements.Test;
+import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Vacancy {
     /**
      * Класс-идентификатор вакансии (поле со ссылкой на вакансию)
      */
-    @SheetColumn(name = "Идентификатор")
+    @SheetColumn(name = "Идентификатор", type = SheetColumnType.FORMULA)
     Identifier identifier = new Identifier();
 
     /**
@@ -30,61 +33,61 @@ public class Vacancy {
     /**
      * Короткое представление работодателя
      */
-    @SheetColumn(name = "Компания")
+    @SheetColumn(name = "Компания", type = SheetColumnType.FORMULA)
     Employer employer;
 
     /**
      * Название вакансии
      */
-    @SheetColumn(name = "Название")
+    @SheetColumn(name = "Название", type = SheetColumnType.STRING)
     String name;
 
     /**
      * Оклад
      */
-    @SheetColumn(name = "Оклад")
+    @SheetColumn(name = "Оклад", type = SheetColumnType.STRING)
     Salary salary;
 
     /**
      * Требуемый опыт работы
      */
-    @SheetColumn(name = "Требуемый опыт")
+    @SheetColumn(name = "Требуемый опыт", type = SheetColumnType.STRING)
     Experience experience;
 
     /**
      * Ключевые навыки
      */
-    @SheetColumn(name = "Ключевые навыки")
+    @SheetColumn(name = "Ключевые навыки", type = SheetColumnType.STRING)
     List<KeySkill> key_skills;
 
     /**
      * Адрес вакансии
      */
-    @SheetColumn(name = "Адрес")
+    @SheetColumn(name = "Адрес", type = SheetColumnType.STRING)
     Address address;
 
     /**
      * График работы
      */
-    @SheetColumn(name = "График работы")
+    @SheetColumn(name = "График работы", type = SheetColumnType.STRING)
     Schedule schedule;
 
     /**
      * Тип занятости
      */
-    @SheetColumn(name = "Тип занятости")
+    @SheetColumn(name = "Тип занятости", type = SheetColumnType.STRING)
     Employment employment;
 
     /**
      * Специализации
      */
-    @SheetColumn(name = "Специализации")
+    @SheetColumn(name = "Специализации", type = SheetColumnType.STRING)
     List<Specialization> specialization;
 
     /**
      * В архиве
      */
-    @SheetColumn(name = "В архиве")
+    @SheetColumn(name = "В архиве", type = SheetColumnType.BOOLEAN)
     boolean archived;
 
     /**
@@ -129,34 +132,31 @@ public class Vacancy {
 
 
     /**
-     * @param orderedFields список полей класса в той же последовательности, как они указаны в таблице
-     * @return параметры вакансии, соответствующие полученному списку полей
-     * @throws ReflectiveOperationException возникает, если нужного поля не существует, либо оно недоступно
+     * @return словарь, в котором ключами являются существующие аннотации {@link SheetColumn} на полях класса
+     * {@link Vacancy}, а значениями - значения этих аннотированных полей
      */
-    public List<Object> getFieldsDataList(List<String> orderedFields) throws ReflectiveOperationException {
-        List<Object> result = new ArrayList<>(orderedFields.size());
-        for (String fieldName : orderedFields) {
-            try {
-                if (fieldName.isEmpty()) { // Избегаем зануленных пользовательских полей
-                    result.add("");
-                    continue;
-                }
-                Object fieldValue = this.getClass().getDeclaredField(fieldName).get(this);
-                String tmp = "-";   // Если данных нет
-                if (fieldValue != null && !fieldValue.toString().isEmpty()) {
-                    // Необходимо получить значение поля, если это не список,
-                    // и список значений, если сам список не пуст
-                    if (!(fieldValue instanceof List)) {
-                        tmp = fieldValue.toString();
-                    } else if (!((List<?>) fieldValue).isEmpty()) {
-                        tmp = ((List<?>) fieldValue).stream().map(Object::toString).collect(Collectors.joining(", "));
+    public Map<SheetColumn, Object> getSheetColumnFieldDataMap() { // TODO test
+        Map<SheetColumn, Object> result = new HashMap<>();
+        Arrays.stream(Vacancy.class.getDeclaredFields()).filter(field -> field.isAnnotationPresent(SheetColumn.class))
+                .forEachOrdered(field -> {
+                    try {
+                        result.put(field.getAnnotation(SheetColumn.class), field.get(this));
+                    } catch (IllegalAccessException e) {
+                        LoggerFactory.getLogger(Vacancy.class).warn("Ошибка при обращении к полям класса " +
+                                Vacancy.class.getName(), e);
+                        result.put(field.getAnnotation(SheetColumn.class), null);
                     }
-                }
-                result.add(tmp);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new ReflectiveOperationException("Ошибка при обращении к полям класса Vacancy", e);
-            }
-        }
+                });
         return result;
+    }
+
+    /**
+     * @return список из аннотаций {@link SheetColumn} на полях класса {@link Vacancy}
+     */
+    public static List<SheetColumn> getSheetColumnList() { // TODO test
+        return Arrays.stream(Vacancy.class.getDeclaredFields())
+                .filter(field -> field.isAnnotationPresent(SheetColumn.class))
+                .map(field -> field.getAnnotation(SheetColumn.class))
+                .collect(Collectors.toList());
     }
 }
