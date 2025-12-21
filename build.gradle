@@ -18,17 +18,20 @@ repositories {
 
 String SPRING_VER = '6.2.15'
 String SLF4J_VER = '2.0.11'
+String TELEGRAMBOTS_VER = '9.2.0'
 
 dependencies {
     implementation "org.springframework:spring-core:$SPRING_VER"
     implementation "org.springframework:spring-beans:$SPRING_VER"
     implementation "org.springframework:spring-context:$SPRING_VER"
+    implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
 
     // API
     implementation platform('com.konghq:unirest-java-bom:4.7.0')
     implementation 'com.konghq:unirest-java-core'
     implementation 'com.konghq:unirest-modules-gson'
-    implementation 'org.telegram:telegrambots:6.9.7.1'
+    implementation "org.telegram:telegrambots-longpolling:$TELEGRAMBOTS_VER"
+    implementation "org.telegram:telegrambots-client:$TELEGRAMBOTS_VER"
     implementation 'com.google.api-client:google-api-client:2.0.0'
     implementation 'com.google.oauth-client:google-oauth-client-jetty:1.34.1'
     implementation 'com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0'

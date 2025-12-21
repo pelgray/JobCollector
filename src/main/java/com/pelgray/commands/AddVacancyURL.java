@@ -11,13 +11,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
-public class AddVacancyURL implements ICommandHandler {
+public class AddVacancyURL implements CommandHandler {
     private static final Logger LOG = LoggerFactory.getLogger(AddVacancyURL.class);
 
     @Value("${gSheets.SpreadsheetId}")
@@ -29,7 +29,7 @@ public class AddVacancyURL implements ICommandHandler {
 
     @Override
     public SendMessage handle(Message msg) {
-        SendMessage.SendMessageBuilder result = getSendMessageBuilder(msg).text("Добавлено");
+        SendMessage.SendMessageBuilder<?, ?> result = getSendMessageBuilder(msg).text("Добавлено");
         try {
             String vacancyId = getVacancyId(msg);
             if (getSheetsService().isValueExist(vacancyId, 1)) {
