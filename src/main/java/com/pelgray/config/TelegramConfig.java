@@ -8,20 +8,26 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
+import org.telegram.telegrambots.meta.generics.TelegramClient;
 
 import java.util.concurrent.ThreadFactory;
 
 @Configuration
 @PropertySource("file:/${app.props:${user.dir}}/config.properties")
-public class AppConfig {
+public class TelegramConfig {
 
     @Bean
-    OkHttpTelegramClient telegramClient(@Value("${tgBot.Token}") String token) {
+    TelegramClient telegramClient(@Value("${tgBot.Token}") String token) {
         return new OkHttpTelegramClient(token);
     }
 
+    /**
+     * Фабрика потоков с переопределением названия на имя Telegram бота. Для удобства просмотра логов.
+     *
+     * @param botUsername название Telegram бота
+     */
     @Bean
-    ThreadFactory namedThreadFactory(@Value("${tgBot.Name}") String botUsername) {
+    ThreadFactory telegrambotNamedThreadFactory(@Value("${tgBot.Name}") String botUsername) {
         return new ThreadFactoryBuilder().setNameFormat("%s-thr-%%d".formatted(botUsername)).build();
     }
 

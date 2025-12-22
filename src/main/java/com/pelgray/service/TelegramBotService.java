@@ -30,8 +30,8 @@ public class TelegramBotService implements LongPollingUpdateConsumer {
     @Autowired
     private TelegramClient client;
 
-    public TelegramBotService(ThreadFactory namedThreadFactory) {
-        this.updatesProcessorExecutor = Executors.newSingleThreadExecutor(namedThreadFactory);
+    public TelegramBotService(ThreadFactory telegrambotNamedThreadFactory) {
+        this.updatesProcessorExecutor = Executors.newSingleThreadExecutor(telegrambotNamedThreadFactory);
     }
 
     /**
