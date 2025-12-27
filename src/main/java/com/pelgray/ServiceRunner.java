@@ -2,34 +2,20 @@ package com.pelgray;
 
 import com.pelgray.exceptions.GoogleConnectionException;
 import com.pelgray.service.GoogleSheetsService;
-import com.pelgray.service.TelegramBotService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.telegram.telegrambots.meta.TelegramBotsApi;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
-@Configuration
-@PropertySource("file:/${app.props:${user.dir}}/config.properties")
-@ComponentScan("com.pelgray")
+@ComponentScan
 public class ServiceRunner {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceRunner.class);
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(ServiceRunner.class);
-        TelegramBotService tgBotService = context.getBean("telegramBotService", TelegramBotService.class);
-        tgBotService.checkInputParameters();
+        new AnnotationConfigApplicationContext(ServiceRunner.class);
         try {
             GoogleSheetsService.initToken();
-            new TelegramBotsApi(DefaultBotSession.class).registerBot(tgBotService);
-        } catch (TelegramApiException e) {
-            LOG.error("Ошибка при подключении к Telegram боту", e);
-            throw e;
         } catch (GoogleConnectionException e) {
             LOG.error("Ошибка при подключении к Google API", e);
             throw e;

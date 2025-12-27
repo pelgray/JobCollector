@@ -1,88 +1,64 @@
 package com.pelgray.service;
 
+import com.pelgray.commands.CommandHandler;
 import com.pelgray.commands.DefaultHandler;
-import com.pelgray.commands.ICommandHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
-@Component
-public class TelegramBotService extends TelegramLongPollingBot {
+@Service
+public class TelegramBotService implements LongPollingUpdateConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(TelegramBotService.class);
 
-    @Value("${tgBot.Name}")
-    private String botUsername;
-
-    private final String botToken;
+    private final Executor updatesProcessorExecutor;
 
     @Autowired
-    private List<ICommandHandler> commands;
+    private List<CommandHandler> commands;
 
-    public TelegramBotService(@Value("${tgBot.Token}") String botToken) {
-        super(botToken);
-        this.botToken = botToken;
+    @Autowired
+    private TelegramClient client;
+
+    public TelegramBotService(ThreadFactory telegrambotNamedThreadFactory) {
+        this.updatesProcessorExecutor = Executors.newSingleThreadExecutor(telegrambotNamedThreadFactory);
     }
 
     /**
-     * Метод возвращает имя бота, указанное при регистрации
-     *
-     * @return имя бота
-     */
-    @Override
-    public String getBotUsername() {
-        return botUsername;
-    }
-
-    /**
-     * Метод для приема сообщений
+     * Метод для приема сообщения
      *
      * @param update содержит сообщение от пользователя
      */
-    @Override
-    public void onUpdateReceived(Update update) {
+    public void consume(Update update) {
         LOG.debug("Получен запрос id={}", update.getUpdateId());
         if (!update.hasMessage()) {
-            LOG.warn("Не понятно, как обработать запрос: {}", update.toString());
+            LOG.warn("Не понятно, как обработать запрос: {}", update);
             return;
         }
         Message msg = update.getMessage();
         LOG.debug("Получено сообщение \"{}\" от пользователя {}", msg.getText(), msg.getFrom().getUserName());
 
         try {
-            execute(handleCommand(msg));
+            client.execute(handleCommand(msg));
             LOG.debug("Сообщение \"{}\" от пользователя {} обработано", msg.getText(), msg.getFrom().getUserName());
         } catch (TelegramApiException e) {
             LOG.error("Не удалось выполнить отправку ответного сообщения", e);
         }
     }
 
-    /**
-     * Проверка наличия параметров
-     *
-     * @return {@code true}, если хотя бы один параметр не указан
-     */
-    public void checkInputParameters() throws Exception {
-        List<String> emptyParameters = new ArrayList<>(2);
-        if (botUsername.isEmpty()) {
-            emptyParameters.add("tgBot.Name");
-        }
-        if (botToken.isEmpty()) {
-            emptyParameters.add("tgBot.Token");
-        }
-        if (!emptyParameters.isEmpty()) {
-            throw new Exception("В файле \"config.properties\" не указаны следующие обязательные параметры:\n\t- " +
-                    String.join("\n\t- ", emptyParameters) + "\nСервис не может быть запущен.");
-        }
+    @Override
+    public void consume(List<Update> updates) {
+        updates.forEach(update -> updatesProcessorExecutor.execute(() -> consume(update)));
     }
 
     /**
@@ -92,7 +68,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
      * @return сообщение-ответ
      */
     private SendMessage handleCommand(Message message) {
-        ICommandHandler handler = commands.stream()
+        CommandHandler handler = commands.stream()
                 .filter(command -> command.accept(message))
                 .findFirst().orElse(new DefaultHandler());
         return handler.handle(message);

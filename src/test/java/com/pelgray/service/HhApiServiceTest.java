@@ -1,8 +1,8 @@
 package com.pelgray.service;
 
 import com.pelgray.exceptions.VacancyNotFoundException;
-import kong.unirest.UnirestException;
-import kong.unirest.UnirestParsingException;
+import kong.unirest.core.UnirestException;
+import kong.unirest.core.UnirestParsingException;
 import org.testng.annotations.Test;
 
 public class HhApiServiceTest {

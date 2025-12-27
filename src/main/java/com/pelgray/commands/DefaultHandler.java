@@ -3,9 +3,9 @@ package com.pelgray.commands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 
-public class DefaultHandler implements ICommandHandler {
+public class DefaultHandler implements CommandHandler {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultHandler.class);
 
     @Override

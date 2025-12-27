@@ -2,10 +2,10 @@ package com.pelgray.service;
 
 import com.pelgray.domain.Vacancy;
 import com.pelgray.exceptions.VacancyNotFoundException;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestException;
-import kong.unirest.UnirestParsingException;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.Unirest;
+import kong.unirest.core.UnirestException;
+import kong.unirest.core.UnirestParsingException;
 
 /**
  * Класс для общения с api.hh.ru

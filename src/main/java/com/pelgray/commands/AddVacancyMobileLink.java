@@ -3,7 +3,7 @@ package com.pelgray.commands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.message.Message;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
